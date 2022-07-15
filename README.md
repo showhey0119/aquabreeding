@@ -12,12 +12,13 @@ numpy
 pandas (for jupyter notebook)  
 matplotlib (for jupyter notebook)  
 seaborn (for jupyter notebook)  
-hoge  
+
 
 ## Installation
-`git clone hogehoge`
-`cd ./aquabreeding`
-`pip3 install .`
+`git clone https://github.com/showhey0119/aquabreeding`  
+`cd ./aquabreeding`  
+`pip3 install .`  
+
 
 ## Quick startup
 see aquqbreeding\_tutorial.ipynb
