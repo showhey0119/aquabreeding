@@ -1,7 +1,0 @@
-setup.py
-aquabreeding/__init__.py
-aquabreeding/aquabreeding.py
-aquabreeding.egg-info/PKG-INFO
-aquabreeding.egg-info/SOURCES.txt
-aquabreeding.egg-info/dependency_links.txt
-aquabreeding.egg-info/top_level.txt
