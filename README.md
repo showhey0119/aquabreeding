@@ -7,7 +7,7 @@ The Aquabreeding generates a founder population together with coalescent simulat
 This is a beta version.  Please do not use it for any publications.
 
 ## Requirements
-- macOS (mayby Unix)
+- macOS (maybe Unix)
 - python pachage
     - numpy  
     - [msprime](https://tskit.dev/msprime/docs/stable/intro.html)  
