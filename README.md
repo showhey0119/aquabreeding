@@ -8,7 +8,7 @@ This is a beta version.  Please do not use it for any publications.
 
 ## Requirements
 - macOS (maybe Unix)
-- python pachage
+- python libraries
     - numpy  
     - [msprime](https://tskit.dev/msprime/docs/stable/intro.html)  
     - pandas (for jupyter notebook)  
