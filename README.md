@@ -25,11 +25,6 @@ This is a beta version.  Please do not use it for any publications.
 
 
 ## Installation
-[](
-`git clone https://github.com/showhey0119/aquabreeding`\
-`cd ./aquabreeding`\
-`pip3 install .`\
-)
 `git clone --recursive https://github.com/showhey0119/aquabreeding`
 `cd ./aquabreeding`
 `python3 setup.py build`
