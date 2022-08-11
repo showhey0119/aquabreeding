@@ -3,8 +3,9 @@ import re
 import subprocess
 import sys
 
-from setuptools import Extension, setup
+from setuptools import Extension, setup, find_packages
 from setuptools.command.build_ext import build_ext
+
 
 # Convert distutils Windows platform specifiers to CMake -A arguments
 PLAT_TO_CMAKE = {
@@ -127,6 +128,7 @@ setup(
     author_email="no@e.mail",
     description="Simulation for aquatic breeding",
     long_description="",
+    packages=find_packages("aquabreeding"),
     ext_modules=[CMakeExtension("aquabreeding._nrm")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
