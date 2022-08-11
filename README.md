@@ -6,21 +6,34 @@ The Aquabreeding generates a founder population together with coalescent simulat
 
 This is a beta version.  Please do not use it for any publications.
 
+## Under development
+
 ## Requirements
-- macOS (maybe Unix)
+- macOS (No guarantee that it will work on unix)
+- python3
 - python libraries
-    - numpy  
+    - numpy
+    - scipy
+    - numba  
     - [msprime](https://tskit.dev/msprime/docs/stable/intro.html)  
     - pandas (for jupyter notebook)  
     - matplotlib (for jupyter notebook)  
     - seaborn (for jupyter notebook)  
+- cmake
+- C++ library
+    - eigen
 
 
 ## Installation
-`git clone https://github.com/showhey0119/aquabreeding`  
-`cd ./aquabreeding`  
-`pip3 install .`  
-
+[](
+`git clone https://github.com/showhey0119/aquabreeding`\
+`cd ./aquabreeding`\
+`pip3 install .`\
+)
+`git clone --recursive https://github.com/showhey0119/aquabreeding`
+`cd ./aquabreeding`
+`python3 setup.py build`
+'pip3 install .`
 
 ## Quick startup
 see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/blob/master/aquabreeding_tutorial.ipynb)
