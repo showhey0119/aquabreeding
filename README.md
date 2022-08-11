@@ -28,7 +28,7 @@ This is a beta version.  Please do not use it for any publications.
 `git clone --recursive https://github.com/showhey0119/aquabreeding`  
 `cd ./aquabreeding`  
 `python3 setup.py build`  
-'pip3 install .`  
+`pip3 install .`  
 
 ## Quick startup
 see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/blob/master/aquabreeding_tutorial.ipynb)
