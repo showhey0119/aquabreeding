@@ -5,7 +5,7 @@ module for SNPs of parental/progeny populations
 import numpy as np
 import msprime
 from numba import jit
-
+#from aquabreeding import _nrm as nrm
 
 def genotype_array(snp_array):
     '''
@@ -25,22 +25,25 @@ def genotype_array(snp_array):
     # genotpe_array
 
 
+#@jit(cache=True)
+def get_genotype2(sp_ls, sp_pos):
+    '''
+    get genotype in a given chromosome position
+    '''
+    for sg_ls in sp_ls:
+        if sg_ls[0] <= sp_pos <= sg_ls[1]:
+            return sg_ls[2]
+    return None
+    # get_genotype
+
+
 def progeny_snp(snp_array, snp_dict, n_snp, pro_pop, n_progeny):
     '''
     generating progeny's snp_array
-    args: snp_array (founder), snp information, # snp, progeny_pop info
+    args: snp_array (founder) (np.ndarray), snp information (dict), 
+          no. snp (int), progeny_pop (class list), progeny size (int)
     return np.ndarray
     '''
-    @jit(cache=True)
-    def get_genotype(sp_ls, sp_pos):
-        '''
-        get genotype in a given chromosome position
-        '''
-        for sg_ls in sp_ls:
-            if sg_ls[0] <= sp_pos <= sg_ls[1]:
-                return sg_ls[2]
-        return None
-        # search genotype
     tmp_array = np.full((2*n_progeny, n_snp), -777, dtype=np.int)
     # for each SNP
     for ps_j in range(n_snp):

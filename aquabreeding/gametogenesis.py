@@ -7,129 +7,41 @@ import numpy as np
 from numba import jit
 
 
-@jit(cache=True)
-def where_break_point(w_posi, w_ls):
-    '''
-    search the segment where crossing-over occurs
-    '''
-    for i in range(w_ls.shape[0]):
-        if w_ls[i][0] < w_posi < w_ls[i][1]:
-            return i
-        if int(w_posi-0.5) == w_ls[i][1]:
-            return -7
-    return None
-    # where_break_point
 
-
-@jit(cache=True)
-def where_break_point2(w_posi, w_ls):
+def add_break_point(ab_posi, ab_ls):
     '''
-    search the segment where crossing-over occurs
-    call this function when crossing-over occurs
-    at the alrealy-existing break point
+    add recombination break point at the list of a chromatid
+    args: recombination break point (int), genome info (list)
+    return the index of inserted segment
     '''
-    for i in range(w_ls.shape[0]):
-        if int(w_posi-0.5) == w_ls[i][1]:
-            return i
-    return None
-    # where_break_point2
-
-
-@jit(cache=True)
-def add_break_point(ab_i, ab_ls, ab_posi):
-    '''
-    add recombination break point
-    '''
-    for i in range(ab_ls.shape[0]-1, -1, -1):
-        if ab_ls[i][0] == -7:
-            continue
-        if i == ab_i:
-            ab_ls[i+1][0] = int(ab_posi+0.5)
-            ab_ls[i+1][1] = ab_ls[i][1]
-            ab_ls[i+1][2] = ab_ls[i][2]
-            ab_ls[i][1] = int(ab_posi-0.5)
-            break
-        ab_ls[i+1][0] = ab_ls[i][0]
-        ab_ls[i+1][1] = ab_ls[i][1]
-        ab_ls[i+1][2] = ab_ls[i][2]
+    for ab_i, ab_tmp in enumerate(ab_ls):
+        # add new break point
+        if ab_tmp[0] < ab_posi < ab_tmp[1]:
+            ab_ls.insert(ab_i, [ab_tmp[0], int(ab_posi-0.5), ab_tmp[2]])
+            ab_ls[ab_i+1][0] = int(ab_posi+0.5)
+            return ab_i
+        # when break point already exists
+        if int(ab_posi-0.5) == ab_tmp[1]:
+            return ab_i
+    return -777
     # add_break_point
-
-
-@jit('void(i8, i8, i8[:,:], i8[:,:])', cache=True)
-def exchange_segments(e_i1, e_i2, e_ls1, e_ls2):
-    '''
-    exchange the genomic segments behind the
-    recombination break point
-    '''
-    l_ls1 = e_ls1.shape[0]
-    l_ls2 = e_ls2.shape[0]
-    # ls1-ls2
-    e_ls1_behind = e_ls1[e_i1+1:].copy()
-    e_j = e_i2+1
-    for i in range(e_i1+1, l_ls1):
-        if e_j >= l_ls2:
-            e_ls1[i][0] = -7
-            e_ls1[i][1] = -7
-            e_ls1[i][2] = -7
-        else:
-            e_ls1[i][0] = e_ls2[e_j][0]
-            e_ls1[i][1] = e_ls2[e_j][1]
-            e_ls1[i][2] = e_ls2[e_j][2]
-        e_j += 1
-    # ls2-ls1
-    e_j = 0
-    l_ls1_b = e_ls1_behind.shape[0]
-    for i in range(e_i2+1, l_ls2):
-        if e_j >= l_ls1_b:
-            e_ls2[i][0] = -7
-            e_ls2[i][1] = -7
-            e_ls2[i][2] = -7
-        else:
-            e_ls2[i][0] = e_ls1_behind[e_j][0]
-            e_ls2[i][1] = e_ls1_behind[e_j][1]
-            e_ls2[i][2] = e_ls1_behind[e_j][2]
-        e_j += 1
-    # exchange_segments
 
 
 def crossing_over(es_posi, es_ls1, es_ls2):
     '''
-    args: recombination break point (int)
-          chromatid 1 (np.ndarray)
-          chromatid 2 (np.ndarray)
     step 1: get the indices, where crossing-over occurs
-    setp 2: add recombination break point
-    step 3: exchange the segments behind the break point
+    step 2: exchange the segments behind the break point
     '''
-    # search segment where crossing-over occurs
-    # first chromatid
-    es_i1 = where_break_point(es_posi, es_ls1)
-    if es_i1 == -7:
-        # if the break point already exists
-        es_i1 = where_break_point2(es_posi, es_ls1)
-    else:
-        add_break_point(es_i1, es_ls1, es_posi)
-    # second chromatid
-    es_i2 = where_break_point(es_posi, es_ls2)
-    if es_i2 == -7:
-        es_i2 = where_break_point2(es_posi, es_ls2)
-    else:
-        add_break_point(es_i2, es_ls2, es_posi)
-    # crossing-over
-    exchange_segments(es_i1, es_i2, es_ls1, es_ls2)
-    # crossing_over
-
-
-@jit(cache=True)
-def first_7(ls_7):
-    '''
-    search not-used memory allocation
-    '''
-    for i in range(ls_7.shape[0]):
-        if ls_7[i][0] == -7:
-            return i
-    return None
-    # first_7
+    es_index1 = add_break_point(es_posi, es_ls1)
+    es_index2 = add_break_point(es_posi, es_ls2)
+    # crossing-over event
+    es_ls1_behind = es_ls1[es_index1+1:]
+    del es_ls1[es_index1+1:]
+    es_ls2_behind = es_ls2[es_index2+1:]
+    del es_ls2[es_index2+1:]
+    es_ls1.extend(es_ls2_behind)
+    es_ls2.extend(es_ls1_behind)
+    # exchange_segment
 
 
 def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
@@ -141,22 +53,15 @@ def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
     return one of four chromatids (np.ndarray)
     '''
     # bivalent chromosomes
-    pat_1 = ch_pat.copy()
-    pat_2 = ch_pat.copy()
-    mat_1 = ch_mat.copy()
-    mat_2 = ch_mat.copy()
+    pat_1 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_pat]
+    pat_2 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_pat]
+    mat_1 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_mat]
+    mat_2 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_mat]
     # crossing-over
     # '1+' means obligate chiasma
     n_rec = 1 + np.random.poisson(ex_n_rec-1)
     break_point = np.random.randint(low=1, high=l_chrom, size=n_rec)+0.5
     bivalent = np.random.randint(4, size=n_rec+1)
-    # memory allocation
-    l_max = np.max((ch_pat.shape[0], ch_mat.shape[0]))
-    tmp_7 = [[-7, -7, -7] for i in range(n_rec+l_max)]
-    pat_1 = np.concatenate([pat_1, tmp_7], axis=0)
-    pat_2 = np.concatenate([pat_2, tmp_7], axis=0)
-    mat_1 = np.concatenate([mat_1, tmp_7], axis=0)
-    mat_2 = np.concatenate([mat_2, tmp_7], axis=0)
     # crossing-over
     for i in range(n_rec):
         # which sister-chromatids are recombined
@@ -170,17 +75,13 @@ def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
             crossing_over(break_point[i], pat_2, mat_2)
     # which chtomaid is inherited
     if bivalent[n_rec] == 0:
-        g_i = first_7(pat_1)
-        return pat_1[:g_i]
+        return pat_1
     if bivalent[n_rec] == 1:
-        g_i = first_7(pat_2)
-        return pat_2[:g_i]
+        return pat_2
     if bivalent[n_rec] == 2:
-        g_i = first_7(mat_1)
-        return mat_1[:g_i]
+        return mat_1
     if bivalent[n_rec] == 3:
-        g_i = first_7(mat_2)
-        return mat_2[:g_i]
+        return mat_2
     return -777
     # gametogenesis
 

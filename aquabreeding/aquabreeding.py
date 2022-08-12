@@ -52,8 +52,8 @@ class ChromInfo:
         self.chrom = chrom
         self.c_id = input_id
         # begin segment (bp), end segment (bp), genotype ID in the founder
-        self.ch_pat = np.array([[1, self.chrom[1], 2*self.c_id]])
-        self.ch_mat = np.array([[1, self.chrom[1], 2*self.c_id+1]])
+        self.ch_pat = [[1, self.chrom[1], 2*self.c_id]]
+        self.ch_mat = [[1, self.chrom[1], 2*self.c_id+1]]
         # __init__
 
     def call_gametogenesis2(self, ex_n_rec):
@@ -100,10 +100,10 @@ class IndividualInfo:
         print(f'  mother = {self.mat_id}')
         for pi_j in range(self.chrom[0]):
             print(f'{pi_j}th chromosome')
-            print('paternal')
-            print(f'{self.ch_ls[pi_j].ch_pat}')
-            print('maternal')
-            print(f'{self.ch_ls[pi_j].ch_mat}')
+            print('  paternal')
+            print(f'  {self.ch_ls[pi_j].ch_pat}')
+            print('  maternal')
+            print(f'  {self.ch_ls[pi_j].ch_mat}')
         # print_individual
 
     def call_gametogenesis(self, c_j, ex_n_rec):
@@ -119,8 +119,8 @@ class IndividualInfo:
         exchange chromosome by new gametes
         args: gamete1 (list), gamete2 (list), chromosome ID,
         '''
-        self.ch_ls[ch_id].ch_pat = gamete_1.copy()
-        self.ch_ls[ch_id].ch_mat = gamete_2.copy()
+        self.ch_ls[ch_id].ch_pat = gamete_1
+        self.ch_ls[ch_id].ch_mat = gamete_2
         # copy_gametes
 # class IndividualInfo
 
@@ -185,7 +185,7 @@ class SimAquabreeding:
             sys.exit('Expected number of crossing-over events is less than 1')
         # __init__
 
-    def print_population(self, target='founder', n_show=10):
+    def print_pop(self, target='founder', n_show=10):
         '''
         display-print a parental/progeny population for debugging
         args: target='founder' for parental population
@@ -257,8 +257,9 @@ class SimAquabreeding:
                 self.pro_pop[g_i].copy_gametes(gamete_1,
                                                gamete_2,
                                                g_j)
-                self.pro_pop[g_i].pat_id = self.par_pop[g_p1].ind_id
-                self.pro_pop[g_i].mat_id = self.par_pop[g_p2].ind_id
+            # add parents' ID
+            self.pro_pop[g_i].pat_id = self.par_pop[g_p1].ind_id
+            self.pro_pop[g_i].mat_id = self.par_pop[g_p2].ind_id
         # random_mating
 
     def breeding_value_nrm(self, g_blup=True, use_jit=True):
@@ -280,7 +281,7 @@ class SimAquabreeding:
         rand_norm = np.random.normal(loc=0.0,
                                      scale=self.v_e,
                                      size=self.n_progeny)
-        self.true_bv = np.dot(genotype_array, self.effect_size.T)
+        self.true_bv = genotype_array @ self.effect_size.T
         self.pheno_v = self.true_bv + rand_norm
         # numerator relationsip matrix and genomic breeding value
         if g_blup:

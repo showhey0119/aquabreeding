@@ -126,6 +126,7 @@ def nrm_jit(par_dict, pro_pop, n_founder):
     calculating numerator relationship matrix
     with numba jit
     '''
+    # parents of the founder population
     par_key = list(par_dict.keys())
     par_key.sort()
     n_par = len(par_key)
@@ -134,13 +135,15 @@ def nrm_jit(par_dict, pro_pop, n_founder):
     for i in range(n_par):
         dict_s.append(par_dict[i]['pat'])
         dict_d.append(par_dict[i]['mat'])
-        n_progeny = len(pro_pop)
+    # parents of the progeny population
+    n_progeny = len(pro_pop)
     for i in range(n_progeny):
         dict_s.append(pro_pop[i].pat_id)
         dict_d.append(pro_pop[i].mat_id)
-    n_mat = np.identity(n_par+n_progeny)
     dict_s = np.array(dict_s)
     dict_d = np.array(dict_d)
+    # calculate numerator relationship matrix
+    n_mat = np.identity(n_par+n_progeny)
     nrm_jit2(n_mat, n_founder, n_par+n_progeny, dict_s, dict_d)
     return n_mat[n_par:, n_par:]
     # nrm_jit
