@@ -128,7 +128,7 @@ setup(
     author_email="no@e.mail",
     description="Simulation for aquatic breeding",
     long_description="",
-    packages=find_packages("aquabreeding"),
+    packages=find_packages(),
     ext_modules=[CMakeExtension("aquabreeding._nrm")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
