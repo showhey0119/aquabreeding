@@ -3,6 +3,8 @@ project(_nrm)
 
 add_subdirectory(pybind11)
 pybind11_add_module(_nrm src/nrm.cpp)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+target_link_libraries(_nrm PRIVATE Eigen3::Eigen)
 
 # EXAMPLE_VERSION_INFO is defined by setup.py and passed into the C++ code as a
 # define (VERSION_INFO) here.
