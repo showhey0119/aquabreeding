@@ -14,9 +14,9 @@ def nrm_cpp(par_dict, progeny_pop, founder_size):
     version 3
     calculating numerator relationship matrix
     parental relationship of all founders and current progeny are required
-    args: dictionary of parents of founders in all generations
-          current progeny populatin info
-          size of founder population
+    args: dictionary of parents of founders in all generations (dict)
+          current progeny populatin info (list)
+          size of founder population (int)
     return np.ndarray (n x n)
     '''
     par_key = list(par_dict.keys())
@@ -46,6 +46,12 @@ def gebv_calculation(y_vec, g_mat):
     Endelman (2011) Plant Genome 4, 250-255.
     The original method is described in
     Kang et al. (2008) Genetics 178, 1709-1723.
+    arge: y_vec: phenotypes (n x 1 np.ndarray)
+          G_mat: numerator relationship matrix (n x n np.ndarray)
+    return hat_beta: estimated fixed effects (np.ndarray)
+           hat_bv: predicted bv (np.ndarray)
+           hat_vg: estimated genetic variance
+           hat_ve: estiamted residual variance
     '''
     def restricted_ml(lam, n_p, theta_vec, omega_sq):
         return (n_p*np.log(np.sum(omega_sq/(theta_vec + lam))) +
@@ -100,6 +106,10 @@ def nrm_jit2(n_mat, j_stt, j_max, vec_s, vec_d):
     '''
     calculating numerator relationship matrix
     with numba jit
+    args: n_mat: result of numerator relationship matrix (np.ndarray)
+          j_stt: founder size (int)
+          j_max: the number of founder+progeny whose parents are known (int)
+          vec_s/d: parents ID (np.ndarray)
     '''
     for j in range(j_stt, j_max):
         pars = vec_s[j]
@@ -125,6 +135,9 @@ def nrm_jit(par_dict, pro_pop, n_founder):
     version 4
     calculating numerator relationship matrix
     with numba jit
+    args: parent ID of founders (dist)
+          pro_pop: list of individual class (list)
+          n_founder: founder size (int)
     '''
     # parents of the founder population
     par_key = list(par_dict.keys())

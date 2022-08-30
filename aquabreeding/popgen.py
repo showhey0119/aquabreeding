@@ -2,10 +2,65 @@
 module for SNPs of parental/progeny populations
 '''
 
+import sys
 import numpy as np
 import msprime
-from numba import jit
-#from aquabreeding import _nrm as nrm
+
+
+def proportion_of_ibd(ls_1, ls_2, chrom):
+    '''
+    calculate the proportion of IBD regions
+    args: paternal chromosome (list)
+          maternal chromosome (list)
+          tuple(chrom num, chrom len, cM/Mb)
+    return prop IBD (float)
+    '''
+    pat_i = mat_i = 0
+    homo_reg = 0.0
+    beg_seg = 1
+    end_seg = -777
+    while True:
+        if ls_1[pat_i][1] < ls_2[mat_i][1]:
+            end_seg = ls_1[pat_i][1]
+            if ls_1[pat_i][2] == ls_2[mat_i][2]:
+                homo_reg += (end_seg - beg_seg + 1)
+            pat_i += 1
+            beg_seg = end_seg + 1
+        else:
+            end_seg = ls_2[mat_i][1]
+            if ls_1[pat_i][2] == ls_2[mat_i][2]:
+                homo_reg += (end_seg - beg_seg + 1)
+            mat_i += 1
+            beg_seg = end_seg + 1
+        if end_seg == chrom[1]:
+            break
+    if homo_reg > chrom[1]:
+        print(f'===\n{homo_reg}\n{ls_1}\n{ls_2}')
+        sys.exit()
+    return homo_reg
+    # proportion_of_ibd
+
+
+def gene_diversity(snp_array):
+    '''
+    calculate gene diversity from SNP array of the progenies
+    args: snp_array (np.ndarray)
+    return gene divesity (float), segregating site (int)
+    '''
+    n_row, n_col = np.shape(snp_array)
+    hat_h = 0.0
+    hat_s = 0
+    for i in range(n_col):
+        tmp_l = snp_array[:, i]
+        f_0 = np.count_nonzero(tmp_l == 0)
+        f_1 = np.count_nonzero(tmp_l == 1)
+        hat_h += 2.0*f_0*f_1/n_row/(n_row-1.0)
+        if f_0 > 0 and f_1 > 0:
+            hat_s += 1
+    hat_h /= n_col
+    return hat_h, hat_s
+    # gene_diversity
+
 
 def genotype_array(snp_array):
     '''
@@ -25,8 +80,7 @@ def genotype_array(snp_array):
     # genotpe_array
 
 
-#@jit(cache=True)
-def get_genotype2(sp_ls, sp_pos):
+def get_genotype(sp_ls, sp_pos):
     '''
     get genotype in a given chromosome position
     '''
@@ -40,7 +94,7 @@ def get_genotype2(sp_ls, sp_pos):
 def progeny_snp(snp_array, snp_dict, n_snp, pro_pop, n_progeny):
     '''
     generating progeny's snp_array
-    args: snp_array (founder) (np.ndarray), snp information (dict), 
+    args: snp_array (founder) (np.ndarray), snp information (dict),
           no. snp (int), progeny_pop (class list), progeny size (int)
     return np.ndarray
     '''
@@ -62,9 +116,12 @@ def progeny_snp(snp_array, snp_dict, n_snp, pro_pop, n_progeny):
 
 def generate_snp(n_sample, n_snp, rate):
     '''
-    generate independent SNPs
-    return np.array
-    rows: haplotype, columns: loci
+    generate independent SNPs under standard
+    Wright-Fisher model
+    args: n_smaple: founder size (int)
+          n_snp: the number of SNPs (int)
+          rate: nuisance parameters
+    return np.array (rows: haplotype, columns: loci)
     '''
     gsa_out = np.empty((0, 2*n_sample), dtype=np.int)
     gsa_count = 0  # until n_snp

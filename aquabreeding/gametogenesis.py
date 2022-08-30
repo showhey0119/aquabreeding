@@ -2,17 +2,15 @@
 module for simulating gametogenesis
 '''
 
-# import sys
 import numpy as np
-from numba import jit
-
 
 
 def add_break_point(ab_posi, ab_ls):
     '''
     add recombination break point at the list of a chromatid
-    args: recombination break point (int), genome info (list)
-    return the index of inserted segment
+    args: ab_posi: recombination break point (int)
+          ab_ls: genome info (list)
+    return the index of inserted segment (int)
     '''
     for ab_i, ab_tmp in enumerate(ab_ls):
         # add new break point
@@ -31,6 +29,9 @@ def crossing_over(es_posi, es_ls1, es_ls2):
     '''
     step 1: get the indices, where crossing-over occurs
     step 2: exchange the segments behind the break point
+    args: es_posi: recombination break point (int)
+          es_ls1: a chromatid (list)
+          es_ls2: another chromatid (list)
     '''
     es_index1 = add_break_point(es_posi, es_ls1)
     es_index2 = add_break_point(es_posi, es_ls2)
@@ -47,9 +48,10 @@ def crossing_over(es_posi, es_ls1, es_ls2):
 def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
     '''
     a function for simulating gametogenesis
-    args: paternal chromosome (np.array), maternal chromosome (np.array),
-          expected number of crossing-over (float)
-          chrom len (bp) (int)
+    args: ch_pat: paternal chromosome (np.ndarray),
+          ch_mat: maternal chromosome (np.ndarray),
+          ex_n_rec: expected number of crossing-over (float)
+          l_chrom: chrom len (bp) (int)
     return one of four chromatids (np.ndarray)
     '''
     # bivalent chromosomes
