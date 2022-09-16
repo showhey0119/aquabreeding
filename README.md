@@ -9,7 +9,8 @@ This is a beta version.  Please do not use it for any publications.
 
 ## Requirements
 - macOS (No guarantee that it will work on unix)
-- python3
+- python3  
+  (e.g., brew install python3)
 - python libraries (automatically installed)
     - numpy
     - scipy
