@@ -8,9 +8,13 @@ import numpy as np
 def add_break_point(ab_posi, ab_ls):
     '''
     add recombination break point at the list of a chromatid
-    args: ab_posi: recombination break point (int)
-          ab_ls: genome info (list)
-    return the index of inserted segment (int)
+
+    Args:
+        ab_posi (int): recombination break point
+        ab_ls (list): a chromatid
+
+    Returns:
+        ab_i (int): the index of inserted segment
     '''
     for ab_i, ab_tmp in enumerate(ab_ls):
         # add new break point
@@ -22,16 +26,20 @@ def add_break_point(ab_posi, ab_ls):
         if int(ab_posi-0.5) == ab_tmp[1]:
             return ab_i
     return -777
-    # add_break_point
+# add_break_point
 
 
 def crossing_over(es_posi, es_ls1, es_ls2):
     '''
+    cross over two chromatids
+
     step 1: get the indices, where crossing-over occurs
     step 2: exchange the segments behind the break point
-    args: es_posi: recombination break point (int)
-          es_ls1: a chromatid (list)
-          es_ls2: another chromatid (list)
+
+    Args:
+        es_posi (int): recombination break point
+        es_ls1 (list): a chromatid
+        es_ls2 (list): another chromatid
     '''
     es_index1 = add_break_point(es_posi, es_ls1)
     es_index2 = add_break_point(es_posi, es_ls2)
@@ -42,17 +50,25 @@ def crossing_over(es_posi, es_ls1, es_ls2):
     del es_ls2[es_index2+1:]
     es_ls1.extend(es_ls2_behind)
     es_ls2.extend(es_ls1_behind)
-    # exchange_segment
+# exchange_segment
 
 
 def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
     '''
-    a function for simulating gametogenesis
-    args: ch_pat: paternal chromosome (np.ndarray),
-          ch_mat: maternal chromosome (np.ndarray),
-          ex_n_rec: expected number of crossing-over (float)
-          l_chrom: chrom len (bp) (int)
-    return one of four chromatids (np.ndarray)
+    Simulate gametogenesis
+
+    Gametogenesis follows four-strand model, and allows
+    one obligate chiasma.  Crossing-over rate is assumed
+    to be constant across the genome
+
+    Args:
+        ch_pat (list): paternal chromosome
+        ch_mat (list): maternal chromosome
+        ex_n_rec (float): expected number of crossing-over
+        l_chrom (int): chrom len (bp)
+
+    Returns:
+        pat/mat_1/2 (list): one of four chromatids
     '''
     # bivalent chromosomes
     pat_1 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_pat]
@@ -61,7 +77,10 @@ def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
     mat_2 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_mat]
     # crossing-over
     # '1+' means obligate chiasma
-    n_rec = 1 + np.random.poisson(ex_n_rec-1)
+    if ex_n_rec > 1.0:
+        n_rec = 1 + np.random.poisson(ex_n_rec-1)
+    else:
+        n_rec = 1
     break_point = np.random.randint(low=1, high=l_chrom, size=n_rec)+0.5
     bivalent = np.random.randint(4, size=n_rec+1)
     # crossing-over
@@ -85,15 +104,15 @@ def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
     if bivalent[n_rec] == 3:
         return mat_2
     return -777
-    # gametogenesis
+# gameto_genesis
 
 
 def main():
     '''
     main
     '''
-    print('The module for gametogenesis')
-    # main
+    print('Module for gametogenesis')
+# main
 
 
 if __name__ == '__main__':
