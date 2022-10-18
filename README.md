@@ -38,7 +38,7 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
-- Version 0.7.0 is released  
+- Version 0.7.0 is released (10/18/2022)  
     - Sex is implemented  
     - Mating design can be flexibly set  
     - ABLUP and GBLUP are implemented  
