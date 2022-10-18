@@ -38,7 +38,8 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 ## History
 - Version 0.7.0 is released  
--- hoge
--- foo
+-- Sex is implemented  
+-- Mating design can be flexibly set  
+-- ABLUP and GBLUP are implemented  
 
 - Version 0.6.0 is released
