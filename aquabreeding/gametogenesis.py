@@ -1,108 +1,139 @@
 '''
-module for simulating gametogenesis
+Module for simulating gametogenesis
 '''
 
+import sys
+import bisect
 import numpy as np
 
 
-def add_break_point(ab_posi, ab_ls):
+def add_break_point(break_point, chrom_x, geno_x):
     '''
-    add recombination break point at the list of a chromatid
+    Add recombination break point at the list of a chromatid
 
     Args:
-        ab_posi (int): recombination break point
-        ab_ls (list): a chromatid
+        break_point (float): recombination break point
+        chrom_x (list): a chromatid
+        geno_x (list): genotype
 
     Returns:
-        ab_i (int): the index of inserted segment
+        int: the index of inserted segment
     '''
-    for ab_i, ab_tmp in enumerate(ab_ls):
-        # add new break point
-        if ab_tmp[0] < ab_posi < ab_tmp[1]:
-            ab_ls.insert(ab_i, [ab_tmp[0], int(ab_posi-0.5), ab_tmp[2]])
-            ab_ls[ab_i+1][0] = int(ab_posi+0.5)
-            return ab_i
-        # when break point already exists
-        if int(ab_posi-0.5) == ab_tmp[1]:
-            return ab_i
-    return -777
+    # bisect
+    new_index = bisect.bisect_left(chrom_x, break_point)
+    end_point = int(break_point - 0.5)
+    # check if break point already exists
+    if new_index > 0 and end_point == chrom_x[new_index-1]:
+        return new_index - 1
+    # insert
+    chrom_x.insert(new_index, end_point)
+    new_geno = geno_x[new_index]
+    geno_x.insert(new_index, new_geno)
+    return new_index
 # add_break_point
 
 
-def crossing_over(es_posi, es_ls1, es_ls2):
+def exchange_block(ls_p, ls_m, indexp, indexm):
     '''
-    cross over two chromatids
-
-    step 1: get the indices, where crossing-over occurs
-    step 2: exchange the segments behind the break point
+    Exchange partial list after break point
 
     Args:
-        es_posi (int): recombination break point
-        es_ls1 (list): a chromatid
-        es_ls2 (list): another chromatid
+        ls_p (list): paternal list
+        ls_m (list): maternal list
+        indexp (int): paternal index with break point
+        indexm (int): maternal index with break point
     '''
-    es_index1 = add_break_point(es_posi, es_ls1)
-    es_index2 = add_break_point(es_posi, es_ls2)
+    ls_p[indexp+1:], ls_m[indexm+1:] = ls_m[indexm+1:], ls_p[indexp+1:]
+# exchange_block
+
+
+def crossing_over(break_point, chrom_p, chrom_m, geno_p, geno_m):
+    '''
+    Cross-over two chromatids
+
+    * step 1: Get the indices, where crossing-over occurs
+    * setp 2: Insert a new segment
+    * step 3: Exchange the segments behind the break point
+
+    Args:
+        break_point (int): recombination break point
+        chrom_p (list): paternal chromatid
+        chrom_m (list): maternal chromatid
+        geno_p (list): paternal genotype
+        geno_m (list): maternal genotype
+    '''
+    new_indexp = add_break_point(break_point, chrom_p, geno_p)
+    new_indexm = add_break_point(break_point, chrom_m, geno_m)
     # crossing-over event
-    es_ls1_behind = es_ls1[es_index1+1:]
-    del es_ls1[es_index1+1:]
-    es_ls2_behind = es_ls2[es_index2+1:]
-    del es_ls2[es_index2+1:]
-    es_ls1.extend(es_ls2_behind)
-    es_ls2.extend(es_ls1_behind)
-# exchange_segment
+    # chromosome
+    exchange_block(chrom_p, chrom_m, new_indexp, new_indexm)
+    # genotype
+    exchange_block(geno_p, geno_m, new_indexp, new_indexm)
+# crossing_over
 
 
-def gameto_genesis(ch_pat, ch_mat, ex_n_rec, l_chrom):
+def gameto_genesis(chrom_inf, ex_n_rec):
     '''
     Simulate gametogenesis
 
-    Gametogenesis follows four-strand model, and allows
+    Gametogenesis follows a four-strand model, and allows
     one obligate chiasma.  Crossing-over rate is assumed
-    to be constant across the genome
+    to be constant across the genome.
 
     Args:
-        ch_pat (list): paternal chromosome
-        ch_mat (list): maternal chromosome
+        chrom_inf (ChromInfo class): Information of a chromosome
         ex_n_rec (float): expected number of crossing-over
-        l_chrom (int): chrom len (bp)
 
     Returns:
-        pat/mat_1/2 (list): one of four chromatids
+        chromosome information
+
+        - list: one of four chromatids,
+        - list: genotype
     '''
     # bivalent chromosomes
-    pat_1 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_pat]
-    pat_2 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_pat]
-    mat_1 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_mat]
-    mat_2 = [[i_1[0], i_1[1], i_1[2]] for i_1 in ch_mat]
+    chrom_p1 = chrom_inf.chrom_pat.copy()
+    chrom_p2 = chrom_inf.chrom_pat.copy()
+    chrom_m1 = chrom_inf.chrom_mat.copy()
+    chrom_m2 = chrom_inf.chrom_mat.copy()
+    geno_p1 = chrom_inf.genotype_pat.copy()
+    geno_p2 = chrom_inf.genotype_pat.copy()
+    geno_m1 = chrom_inf.genotype_mat.copy()
+    geno_m2 = chrom_inf.genotype_mat.copy()
     # crossing-over
+    l_chrom = chrom_inf.chrom[1]
     # '1+' means obligate chiasma
     if ex_n_rec > 1.0:
         n_rec = 1 + np.random.poisson(ex_n_rec-1)
+    # if crossing-over rate = 0
+    elif ex_n_rec == 0:
+        n_rec = 0
+    # if chromosome is very short
     else:
         n_rec = 1
-    break_point = np.random.randint(low=1, high=l_chrom, size=n_rec)+0.5
+        sys.exit('Expected num crossing over events is less than 1')
+    # if 100.5, crossing-over occurs between 100th and 101th sites
+    break_point = np.random.randint(low=1, high=l_chrom, size=n_rec) + 0.5
     bivalent = np.random.randint(4, size=n_rec+1)
     # crossing-over
     for i in range(n_rec):
         # which sister-chromatids are recombined
         if bivalent[i] == 0:
-            crossing_over(break_point[i], pat_1, mat_1)
+            crossing_over(break_point[i], chrom_p1, chrom_m1, geno_p1, geno_m1)
         elif bivalent[i] == 1:
-            crossing_over(break_point[i], pat_1, mat_2)
+            crossing_over(break_point[i], chrom_p1, chrom_m2, geno_p1, geno_m2)
         elif bivalent[i] == 2:
-            crossing_over(break_point[i], pat_2, mat_1)
+            crossing_over(break_point[i], chrom_p2, chrom_m1, geno_p2, geno_m1)
         elif bivalent[i] == 3:
-            crossing_over(break_point[i], pat_2, mat_2)
-    # which chtomaid is inherited
+            crossing_over(break_point[i], chrom_p2, chrom_m2, geno_p2, geno_m2)
+    # which chromaid is inherited
     if bivalent[n_rec] == 0:
-        return pat_1
+        return chrom_p1, geno_p1
     if bivalent[n_rec] == 1:
-        return pat_2
+        return chrom_p2, geno_p2
     if bivalent[n_rec] == 2:
-        return mat_1
+        return chrom_m1, geno_m1
     if bivalent[n_rec] == 3:
-        return mat_2
+        return chrom_m2, geno_m2
     return -777
 # gameto_genesis
 
@@ -111,6 +142,7 @@ def main():
     '''
     main
     '''
+    print('gametogenesis.py')
     print('Module for gametogenesis')
 # main
 
