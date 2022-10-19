@@ -35,7 +35,6 @@ void nrm(Eigen::Ref<RMatrix<T>> m, int j_stt, int j_max, std::vector<int> &s, st
         }
     }
 
-    //m = m * 2.0 ;
 
 }
 
