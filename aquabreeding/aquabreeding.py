@@ -672,7 +672,8 @@ class AquaBreeding:
             sys.exit('blup should be \'ABLUP\', \'GBLUP\' or \'no\'.')
     # breeding_value
 
-    def selection(self, target='bv', method='mass', top_prop=1.0):
+    def selection(self, target='bv', method='mass', top_prop=1.0,
+                  n_family=-1):
         '''
         Select parents of next generation
 
@@ -681,13 +682,14 @@ class AquaBreeding:
                           phenotypic value ('phenotype'), or random
                           ('random')
             method (str): How to select from progenies such as mass
-                          selection ('mass'), or within-family selection
-                          ('within-family')
+                          selection ('mass'), within-family selection
+                          ('within-family'), or family selection ('family')
             top_prop (float): Individuals with top X% breeding values are
-                              selected
+                              selected for within-family selection
+            n_family (int): Number of families to be selected
         '''
         se.select_parent(self.par_inf, self.pro_inf, self.phe_inf,
-                         self.cross_inf, target, method, top_prop)
+                         self.cross_inf, target, method, top_prop, n_family)
     # selection
 
     def get_ibd(self):

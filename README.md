@@ -7,6 +7,10 @@ Aquabreeding generates a founder population using coalescent simulation implemen
 This is a beta version.  Please do not use it for any publications.
 
 
+## Last update
+- 10/20/2022
+
+
 ## Requirements
 - macOS (No guarantee that it will work on unix)
 - python3  
@@ -38,6 +42,9 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
+- Version 0.7.1 is released (10/20/2022)  
+    - Family selection is implemented  
+
 - Version 0.7.0 is released (10/18/2022)  
     - Sex is implemented  
     - Mating design can be flexibly set  

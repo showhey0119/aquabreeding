@@ -123,7 +123,7 @@ class CMakeBuild(build_ext):
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
     name="aquabreeding",
-    version="0.7.0",
+    version="0.7.1",
     author="Shohei Takuno",
     author_email="no@e.mail",
     description="Simulation for aquacultur breeding",

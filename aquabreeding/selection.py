@@ -65,34 +65,28 @@ def family_select_value(pro_inf, select_val, fam_d, tmp_bv, f_m):
 # family_select_value
 
 
-def within_family_selection(par_inf, pro_inf, select_val, top_prop):
+def get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop):
     '''
-    Get index of progenies by within-family selection
+    Get Index or progenies based on tmp_bv
 
     Args:
         par_inf (PopulationInfo class): founder population
         pro_inf (PopulationInfo class): progeny population
-        select_val (ndarray): selection based on these values
-        top_prop (float
+        tmp_bv (list): index, family, value. 0 (female) or 1 (male).
+                       Sorted by value.
+        fam_d (dict): Dictionary of family (all vales are zero)
+        top_prop (float): Select progenies with top X% values
 
     Returns:
-        ndarray: index of selected female/male
+        ndarray: Index of selected female/male
     '''
-    fam_d = {}  # pair of mother and father
-    tmp_bv = []  # list of family, gender, and bv
-    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 0)  # for female
-    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 1)  # for fale
-    # sort by breeding value (or others)
-    # [0: ID, 1: family, 2: breeding value, 3: female or male]
-    tmp_bv.sort(reverse=True, key=operator.itemgetter(2))
     f_val = np.full(par_inf.n_popf, -7, dtype=np.int64)
     m_val = np.full(par_inf.n_popm, -7, dtype=np.int64)
-    n_fval = 0
-    n_mval = 0
+    n_fval = n_mval = 0
     n_tolerant = 0  # how many times progenies are selected in a family
     n_p2 = int(top_prop * (pro_inf.n_popf + pro_inf.n_popm))
     if n_p2 < (par_inf.n_popf + par_inf.n_popm):
-        sys.exit('top_prop is too small, 0')
+        sys.exit('top_prop is too small')
     while n_fval != par_inf.n_popf or n_mval != par_inf.n_popm:
         for i in range(n_p2):
             if tmp_bv[i][0] == -7:
@@ -113,9 +107,99 @@ def within_family_selection(par_inf, pro_inf, select_val, top_prop):
             fam_d[tmp_bv[i][1]] += 1
         n_tolerant += 1
         if n_tolerant >= pro_inf.n_popf + pro_inf.n_popm:
-            sys.exit('top_prop is too small, 1')
+            sys.exit('top_prop or n_family is too small')
+    return f_val, m_val
+# get_index
+
+
+def within_family_selection(par_inf, pro_inf, select_val, top_prop):
+    '''
+    Get index of progenies by within-family selection
+
+    Args:
+        par_inf (PopulationInfo class): founder population
+        pro_inf (PopulationInfo class): progeny population
+        select_val (ndarray): selection based on these values
+        top_prop (float
+
+    Returns:
+        ndarray: index of selected female/male
+    '''
+    fam_d = {}  # pair of mother and father
+    tmp_bv = []  # list of family, gender, and bv
+    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 0)  # for female
+    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 1)  # for fale
+    # sort by breeding value (or others)
+    # [0: ID, 1: family, 2: breeding value, 3: female or male]
+    tmp_bv.sort(reverse=True, key=operator.itemgetter(2))
+    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop)
     return f_val, m_val
 # within_family_selection
+
+
+def family_mean_value(tmp_bv, fam_d, n_family):
+    '''
+    Get mean values of each family
+
+    Args:
+        tmp_bv (list): index, family, value, 0 (female) or 1 (male)
+        fam_d (dict): dictionary for family
+    '''
+    # check if n_family is too large
+    if len(fam_d) < n_family:
+        n_family = len(fam_d)
+    tmp_d = {}
+    tmp_fam = []
+    # initialize
+    for i in fam_d.keys():
+        tmp_d[i] = []
+    # get values for each family
+    for i in tmp_bv:
+        tmp_d[i[1]].append(i[2])
+    # list[family, mean value]
+    for k, v_ls in tmp_d.items():
+        tmp_fam.append([k, np.mean(v_ls)])
+    tmp_fam.sort(reverse=True, key=operator.itemgetter(1))
+    # set of used family
+    used_fam = []
+    for i in range(n_family):
+        used_fam.append(tmp_fam[i][0])
+    used_fam = set(used_fam)
+    # mask unused family
+    for i in tmp_bv:
+        if not i[1] in used_fam:
+            i[0] = -7
+# family_mean_value
+
+
+def family_selection(par_inf, pro_inf, select_val, n_family):
+    '''
+    Get index of progenies by family selection
+
+    Args:
+        par_inf (PopulationInfo class): founder population
+        pro_inf (PopulationInfo class): progeny population
+        select_val (ndarray): selection based on these values
+        n_family (int): Number of families to be selected
+
+    Returns:
+        ndaray: index of selected females/males
+    '''
+    if n_family == -1:
+        sys.exit('n_family should be set to use family selection')
+    fam_d = {}  # pair of mother and father
+    tmp_bv = []  # list of family, gender, and bv
+    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 0)  # for female
+    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 1)  # for fale
+    # sort by breeding value (or others)
+    # [0: ID, 1: family, 2: breeding value, 3: female or male]
+    tmp_bv.sort(reverse=True, key=operator.itemgetter(2))
+    # mask unused families
+    family_mean_value(tmp_bv, fam_d, n_family)
+    # get index
+    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, 1.0)
+    return f_val, m_val
+# family_selection
 
 
 def mass_selection(par_inf, pro_inf, select_val):
@@ -128,7 +212,7 @@ def mass_selection(par_inf, pro_inf, select_val):
         select_val (ndarray): selection based on these values
 
     Returns:
-        ndarray: index of selected female/male
+        ndarray: index of selected females/males
     '''
     f_val = np.argsort(select_val[:pro_inf.n_popf])[::-1][:par_inf.n_popf]
     m_val = np.argsort(select_val[pro_inf.n_popf:])[::-1][:par_inf.n_popm]
@@ -181,7 +265,7 @@ def nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf):
 
 
 def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
-                  top_prop=1.0):
+                  top_prop, n_family):
     '''
     Select parent
 
@@ -196,6 +280,7 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
                       family selection)
         top_prop (float): Individual with top X% breeding values are used
                           in within-family selection
+        n_family (int): Number of families to be selected in family selection
     '''
     # breeding value, phenotype, or random
     select_val = select_value(pro_inf, phe_inf, target)
@@ -207,6 +292,9 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
     elif method == 'within-family':
         f_val, m_val = within_family_selection(par_inf, pro_inf, select_val,
                                                top_prop)
+    # family selection
+    elif method == 'family':
+        f_val, m_val = family_selection(par_inf, pro_inf, select_val, n_family)
     else:
         sys.exit('method should be \'mass\', or \'within-family\'')
     # mating design as inbreeding is minimized
