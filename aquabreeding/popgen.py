@@ -13,10 +13,10 @@ def identity_by_descent(chrom_inf):
     Calculate inbreeding coefficiet in a chromosome
 
     Args:
-        chrom_info (ChromInfo class): chromosome information
+        chrom_info (ChromInfo class): Chromosome information
 
     Returns:
-        float: inbreeding coefficient
+        float: Inbreeding coefficient
     '''
     ch_mat = chrom_inf.chrom_mat
     ch_pat = chrom_inf.chrom_pat
@@ -59,8 +59,8 @@ def gene_diversity(snp_array):
     Returns:
         popgen statistics
 
-        - hat_h (float): gene divesity
-        - hat_s (int): the number of segregating sites
+        - float: Gene divesity
+        - int: The number of segregating sites
     '''
     n_row, n_col = np.shape(snp_array)
     hat_h = 0.0
@@ -85,8 +85,8 @@ def progeny_genotype(pro_snp, gen_mat):
     Args:
         pro_snp (ndarray): SNP array of progenies
                             (rows: haplotype, columns: loci)
-        gen_mat (ndarray): genotype matrix
-                             (rows: genotypes, columns: loci)
+        gen_mat (ndarray): Genotype matrix
+                             (rows: genotype, columns: loci)
     '''
     n_rows, n_cols = gen_mat.shape
     for i in range(n_rows):
@@ -97,13 +97,13 @@ def progeny_genotype(pro_snp, gen_mat):
 
 def progeny_snp(par_snp, pro_snp, snp_dict, pro_inf):
     '''
-    Generating progeny's snp_array
+    Generating snp array of progeny population
 
     Args:
-        par_snp (ndarray): founder SNP array
-        pro_snp (ndarray): progeny SNP array
+        par_snp (ndarray): Founder SNP array
+        pro_snp (ndarray): Progeny SNP array
         snp_dict (dict): SNP information
-        pro_inf (PopulationInfo class), progeny population info
+        pro_inf (PopulationInfo class): Progeny population
     '''
     n_snp = par_snp.shape[1]
     # for each SNP
@@ -127,12 +127,12 @@ def progeny_snp(par_snp, pro_snp, snp_dict, pro_inf):
 
 def generate_snp(n_sample, n_snp):
     '''
-    generate independent SNPs under standard
+    Generate independent SNPs under standard
     Wright-Fisher model
 
     Args:
-        n_smaple (int): founder size
-        n_snp (int): the number of SNPs
+        n_smaple (int): Founder size
+        n_snp (int): The number of SNPs
 
     Returns:
         ndarray: SNP matrix

@@ -3,7 +3,7 @@ Module for simulating gametogenesis
 '''
 
 import sys
-import bisect
+from bisect import bisect_left
 import numpy as np
 
 
@@ -12,15 +12,15 @@ def add_break_point(break_point, chrom_x, geno_x):
     Add recombination break point at the list of a chromatid
 
     Args:
-        break_point (float): recombination break point
-        chrom_x (list): a chromatid
-        geno_x (list): genotype
+        break_point (float): Recombination break point
+        chrom_x (list): Chromatid
+        geno_x (list): Genotype
 
     Returns:
-        int: the index of inserted segment
+        int: index of inserted segment
     '''
     # bisect
-    new_index = bisect.bisect_left(chrom_x, break_point)
+    new_index = bisect_left(chrom_x, break_point)
     end_point = int(break_point - 0.5)
     # check if break point already exists
     if new_index > 0 and end_point == chrom_x[new_index-1]:
@@ -38,10 +38,10 @@ def exchange_block(ls_p, ls_m, indexp, indexm):
     Exchange partial list after break point
 
     Args:
-        ls_p (list): paternal list
-        ls_m (list): maternal list
-        indexp (int): paternal index with break point
-        indexm (int): maternal index with break point
+        ls_p (list): Paternal list
+        ls_m (list): Maternal list
+        indexp (int): Paternal index with break point
+        indexm (int): Maternal index with break point
     '''
     ls_p[indexp+1:], ls_m[indexm+1:] = ls_m[indexm+1:], ls_p[indexp+1:]
 # exchange_block
@@ -56,11 +56,11 @@ def crossing_over(break_point, chrom_p, chrom_m, geno_p, geno_m):
     * step 3: Exchange the segments behind the break point
 
     Args:
-        break_point (int): recombination break point
-        chrom_p (list): paternal chromatid
-        chrom_m (list): maternal chromatid
-        geno_p (list): paternal genotype
-        geno_m (list): maternal genotype
+        break_point (int): Recombination break point
+        chrom_p (list): Paternal chromatid
+        chrom_m (list): Maternal chromatid
+        geno_p (list): Paternal genotype
+        geno_m (list): Maternal genotype
     '''
     new_indexp = add_break_point(break_point, chrom_p, geno_p)
     new_indexm = add_break_point(break_point, chrom_m, geno_m)
@@ -78,17 +78,21 @@ def gameto_genesis(chrom_inf, ex_n_rec):
 
     Gametogenesis follows a four-strand model, and allows
     one obligate chiasma.  Crossing-over rate is assumed
-    to be constant across the genome.
+    to be constant across chromosomes.
 
     Args:
         chrom_inf (ChromInfo class): Information of a chromosome
-        ex_n_rec (float): expected number of crossing-over
+        ex_n_rec (float): Expected number of crossing-over
 
     Returns:
-        chromosome information
+        Chromosome information
 
         - list: one of four chromatids,
         - list: genotype
+
+    Note:
+        If the expected number of crossing-over event is less than one,
+        the script stops.
     '''
     # bivalent chromosomes
     chrom_p1 = chrom_inf.chrom_pat.copy()

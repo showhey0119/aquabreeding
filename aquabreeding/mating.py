@@ -1,5 +1,5 @@
 '''
-module for mating
+Module for mating
 '''
 
 import re
@@ -14,20 +14,20 @@ def set_mating_design_partial(par_inf, cross_design):
 
     ::
 
-              male
-           1x1            1x2            1x3
-        f    0 1 2 3 4      0 1 2 3 4      0 1 2 3 4
-        e  0 x            0 x x          0 x x x
-        m  1   x          1   x x        1   x x x
-        a  2     x        2     x x      2     x x x   ...
-        l  3       x      3       x x    3 x     x x
-        e  4         x    4 x       x    4 x x     x
+                    male
+                  1x1            1x2            1x3
+                  0 1 2 3 4      0 1 2 3 4      0 1 2 3 4
+                0 x            0 x x          0 x x x
+                1   x          1   x x        1   x x x
+        female  2     x        2     x x      2     x x x   ...
+                3       x      3       x x    3 x     x x
+                4         x    4 x       x    4 x x     x
 
     Args:
-        par_inf (PopulationInfo class): founder pop information
+        par_inf (PopulationInfo class): Founder population
 
     Returns:
-        ndarray: [[female index, male index, 0, 0],...]
+        ndarray: female index, male index, 0, 0
     '''
     n_cross = re.findall(r'^1x(\d+)$', cross_design)
     if len(n_cross) != 1:
@@ -55,20 +55,19 @@ def set_mating_design_full(par_inf):
 
     ::
 
-             male
-          full
-        f   0 1 2 3 4
-        e 0 x x x x x
-        m 1 x x x x x
-        a 2 x x x x x
-        l 3 x x x x x
-        e 4 x x x x x
+                   male
+                 0 1 2 3 4
+               0 x x x x x
+               1 x x x x x
+        female 2 x x x x x
+               3 x x x x x
+               4 x x x x x
 
     Args:
-        par_inf (PopulationInfo class): founder pop information
+        par_inf (PopulationInfo class): Founder population
 
     Returns:
-        ndarray: [[female index, male index, 0, 0],...]
+        ndarray: female index, male index, 0, 0
     '''
     pair_i = np.empty((0, 4), dtype=np.int64)
     for i in range(par_inf.n_popf):
@@ -83,11 +82,11 @@ def set_mating_design(par_inf, cross_design):
     Generate cross design information
 
     Args:
-        par_inf (PopulationInfo class): founder pop information
-        cross_design (str): '1x[int]', or 'full' factorial mating
+        par_inf (PopulationInfo class): Founder population
+        cross_design (str): '1x(int)' partial or 'full' factorial mating
 
     Returns:
-        ndarray: [[female index, male index, 0, 0],...]
+        ndarray: Female index, male index, 0, 0
     '''
     if re.compile(r'^1x\d+$').match(cross_design):
         pair_i = set_mating_design_partial(par_inf, cross_design)
@@ -105,10 +104,10 @@ def random_allocation(cross_inf, n_total, tag):
     Randomly allocate the numbers of progenies in each cross
 
     Args:
-        cross_inf (ndarray): female index, male index,
+        cross_inf (ndarray): Female index, male index,
                              no. female progeny, no. male progeny
-        n_total (int): no. male/female progenies
-        tag (int): where female/male progeny num is stored in cross_inf.
+        n_total (int): No. male/female progenies
+        tag (int): Where female/male progeny num is stored in cross_inf.
                    2 for female, 3 for male.
     '''
     n_cross = cross_inf.shape[0]
@@ -129,12 +128,12 @@ def produce_progeny_female_male(cross_inf, par_inf, pro_ls,
     Produce female/male progenies
 
     Args:
-        cross_inf (ndarray): female index, male index,
+        cross_inf (ndarray): Female index, male index,
                              no. female progeny, no. male progeny
-        par_inf (PopulationInfo class): founder/parental population
-        pro_ls (list): list of IndividualInfo class of female/male
-        n_pro (int): no. pro_ls
-        tag (int): where female/male progeny num is stored in cross_inf.
+        par_inf (PopulationInfo class): Founder population
+        pro_ls (list): List of IndividualInfo class of female/male
+        n_pro (int): Length of pro_ls
+        tag (int): Where female/male progeny num is stored in cross_inf.
                    2 for female, 3 for male
     '''
     # index for progeny
@@ -166,10 +165,10 @@ def produce_progeny(cross_inf, par_inf, pro_inf):
     Produce progenies by crossing founder/parental individuals
 
     Args:
-        cross_inf (ndarray): female index, male index,
+        cross_inf (ndarray): Female index, male index,
                              no. female progeny, no. male progeny
-        par_inf (PopulationInfo class): founder population
-        pro_inf (PopulationInfo class): progeny population
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
 
     Note:
         The numbers of female/male progenies are stored in

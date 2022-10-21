@@ -1,32 +1,35 @@
 '''
-module for simulating aquaculture breeding
+Module for simulating aquaculture breeding
 
-version 0.7.0
+version 0.7.1
 
 aquabreeding allows simulating an aquaculture breeding program.
 
 A founder population is generated together with coalesent simulation,
 implemented in msprime.
 
-Progenies are generated following some implemented mating scheme or
+Progenies are produced following some implemented mating scheme or
 user's own setting.
 
 The individuals with large phenotypic/breeding values are selected.
-Mass selection or within-family selection are implemented.
+Mass selection, within-family selection, and family selection  are implemented.
 The selected ones are used as the parental population in the next
 generation.
 
 Phenotype, true/estimated breeding value, inbreeding coefficient,
 and variance components are output.
 
+Note:
+    This is a beta version.
+
 Todo:
-* Implement GBLUP
-* Implement multiple phenotypes
-* Implement founders from structured populations
+    * Dominance and epistasis
+    * Multiple phenotypes
+    * Founders from structured populations
 '''
 
 import sys
-import bisect
+from bisect import bisect_left
 import numpy as np
 from aquabreeding import popgen as pg
 from aquabreeding import mating as mt
@@ -37,22 +40,22 @@ from aquabreeding import selection as se
 
 class ChromInfo:
     '''
-    Class for one of the chromosomes of an individual
+    Class for a chromosomes
 
     Args:
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
+        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
         input_id (int): ID (only used for a founder)
 
     Attributes:
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
+        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
         chrom_mat (list): End points of rec segments in maternal chromosome
         chrom_pat (list): End points of rec segments in paternal chromosome
-        genotype_mat (list): genotype of maternal chromosome in a founder
-        genotype_pat (list): genotype of paternal chromosome in a founder
+        genotype_mat (list): Genotype of maternal chromosome in a founder
+        genotype_pat (list): Genotype of paternal chromosome in a founder
     '''
     def __init__(self, chrom, input_id):
         '''
-        constractor
+        Constractor
         '''
         self.chrom = chrom
         # End point of recombination segments
@@ -65,20 +68,20 @@ class ChromInfo:
 
     def get_genotype_id(self, snp_pos):
         '''
-        Get genotypes in rec segment with SNP
+        Get genotypes in recombination segment with SNP
 
         Args:
             snp_pos (int): SNP position
 
         Returns:
-            genotypes
+            Genotypes
 
-            - int: genotype in maternal chromosome
-            - int: genotype in paternal chromosome
+            - int: Genotype in maternal chromosome
+            - int: Genotype in paternal chromosome
         '''
-        index_m = bisect.bisect_left(self.chrom_mat, snp_pos)
+        index_m = bisect_left(self.chrom_mat, snp_pos)
         gen_mat = self.genotype_mat[index_m]
-        index_p = bisect.bisect_left(self.chrom_pat, snp_pos)
+        index_p = bisect_left(self.chrom_pat, snp_pos)
         gen_pat = self.genotype_pat[index_p]
         return gen_mat, gen_pat
     # get_genotype_id
@@ -87,26 +90,26 @@ class ChromInfo:
 
 class IndividualInfo:
     '''
-    class for an individual and its genome
+    Class for an individual and its genome
 
     Args:
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
+        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
         input_id (int): ID of an individual
         pat_id (int): ID of father, default = -1
         mat_id (int): ID of mother, defautl = -1
 
     Attributes:
         ind_id (int): ID of the individual (only used for parental population)
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
-        chrom_ls (list): list of ChromInfo class
+        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
+        chrom_ls (list): List of ChromInfo class
         mat_id (int): ID of mother
         pat_id (int): ID of father
-        n_recf (float): expected num crossing-over event in female
-        n_recm (float): expected num crossing-over event in male
+        n_recf (float): Expected num crossing-over event in female
+        n_recm (float): Expected num crossing-over event in male
     '''
     def __init__(self, chrom, input_id, pat_id=-1, mat_id=-1):
         '''
-        constructor
+        Constructor
         '''
         self.ind_id = input_id
         self.chrom = chrom
@@ -124,7 +127,7 @@ class IndividualInfo:
 
     def print_individual(self):
         '''
-        display-print individual info
+        Display-print individual info
         '''
         print('======')
         print(f'Individual ID = {self.ind_id}')
@@ -153,6 +156,9 @@ class IndividualInfo:
     def get_ibd2(self):
         '''
         Calulate inbreeding coefficient in an individual
+
+        Returns:
+            float: Inbreeding coefficient
         '''
         tmp_v = 0.0
         for j in range(self.chrom[0]):
@@ -167,17 +173,15 @@ class IndividualInfo:
         '''
         Produce gamete
 
-        call gametogenesis.py
-
         Args:
-            chrom_id (int): chromosome ID
+            chrom_id (int): Chromosome index
             tag (int): 0 for female, 1 for male
 
         Returns:
-            new gamete
+            New gamete
 
-            - list: recombined chromatid,
-            - list: genotypes
+            - list: Recombined chromatid,
+            - list: Genotypes
         '''
         if tag == 0:  # female
             n_rec = self.n_recf
@@ -193,15 +197,15 @@ class IndividualInfo:
     def copy_gametes(self, gamete_1, gamete_2, geno_1, geno_2,
                      chrom_id):
         '''
-        exchange chromosome by new gametes
+        Exchange chromosome by new gametes
 
         Args:
-            gamete_1 (list): new chromatid from female
-            gamete_2 (list): new chromatid from male
-            chrom_id (int): chromosome ID
+            gamete_1 (list): New chromatid from female
+            gamete_2 (list): New chromatid from male
+            chrom_id (int): Chromosome index
 
         Note:
-            Check whether call-by-reference do something wrong
+            Check whether call-by-reference does something wrong
         '''
         self.chrom_ls[chrom_id].chrom_mat = gamete_1
         self.chrom_ls[chrom_id].chrom_pat = gamete_2
@@ -211,14 +215,14 @@ class IndividualInfo:
 
     def get_genotype(self, chrom_id, snp_pos):
         '''
-        Get genotpye of rec segment that has the SNP
+        Get genotpye of recombination segment with SNP
 
         Args:
-            chrom_id (int): chromosome ID
+            chrom_id (int): Chromosome index
             snp_pos: (int): Position of SNP
 
         Returns:
-            genotypes
+            Genotypes
 
             - int: Genotype in maternal chrom
             - int: Genotype in paternal chrom
@@ -232,26 +236,24 @@ class IndividualInfo:
 
 class PopulationInfo:
     '''
-    class for breeding population information
+    Class for breeding population information
 
     Args:
-        pop_size (tuple): no. females, no. males (int, int)
-                          in a population
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
-                       (int, int, float, float)
+        pop_size (tuple): No. females, no. males in a population
+        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
 
     Attributes:
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
+        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
         n_popf (int): No. of females in a population
         n_popm (int): No. of males in a population
-        pop_f (list): list of female IndividualInfo class
-        pop_m (list): list of male IndividualInfo class
+        pop_f (list): List of female IndividualInfo class
+        pop_m (list): List of male IndividualInfo class
         tmp_id (int): ID of all parents (only used for a founder)
         d_par (dict): Dict of parents of founders (only used for a founder)
     '''
     def __init__(self, pop_size, chrom):
         '''
-        constructur
+        Constructur
         '''
         self.chrom = chrom
         self.n_popf = pop_size[0]
@@ -335,31 +337,33 @@ class PopulationInfo:
 
 class SNPInfo:
     '''
-    class for SNP information
+    Class for SNP information
 
     Args:
         n_snp (int): No. SNPs with effect size
         effect_var (float): Variance of effect size
-        founder_size (tuple): Nos. females/males in a founder (int)
-        progeny_size (tuple): Nos. females/males in a progeny (int)
-        chrom (tuple): chrom num, chrom len, male cM/Mb, female cM/Mb
+        founder_size (tuple): Nos. females/males in a founder
+        progeny_size (tuple): Nos. females/males in a progeny
+        chrom (tuple): Chrom num, chrom len, male cM/Mb, female cM/Mb
 
     Attributes:
-        n_snp (int): No. SNPs with effect size
+        n_snp (int): No. SNPs
         n_founder (int): No. founders
         par_snp (ndarray): SNP matrix in a founder population
                            (rows: haplotype, column: loci)
         pro_snp (ndarray): SNP matrix in a progeny population
                            (rows: haplotype, column: loci)
-        gen_mat (ndarray): genotype matrix
+        gen_mat (ndarray): Genotype matrix
                            (rows: genotype, column: loci)
-        effect_size (ndarray): effect size of SNPs
-        snp_dict (dict): chrom and position of SNPs
+        effect_size (ndarray): Effect size of SNPs
+        snp_dict (dict): Chromosome and position of SNPs
+        p_mat (ndarray): Allele frequency matrix (P matrix)
+        gmat_denom (float): Denominator of G matrix
     '''
     def __init__(self, n_snp, effect_var, founder_size, progeny_size,
                  chrom):
         '''
-        constructor
+        Constructor
         '''
         self.n_snp = n_snp
         self.n_founder = founder_size[0] + founder_size[1]
@@ -398,10 +402,9 @@ class SNPInfo:
 
     def msprime_standard(self):
         '''
-        To set SNPs in a founder population
+        Simulate SNPs in a founder population
 
         Simulate SNPs under standard Wright-Fisher model.
-        call popgen.py
         '''
         self.par_snp = pg.generate_snp(n_sample=self.n_founder,
                                        n_snp=self.n_snp)
@@ -409,10 +412,10 @@ class SNPInfo:
 
     def genotype_matrix(self, pro_inf):
         '''
-        Get SNP matrix of progenies
+        Get SNP amd genotype matrix of progenies
 
         Args:
-            pro_inf (PopulationInfo class): progeny population info
+            pro_inf (PopulationInfo class): Progeny population
         '''
         pg.progeny_snp(self.par_snp, self.pro_snp, self.snp_dict, pro_inf)
         pg.progeny_genotype(self.pro_snp, self.gen_mat)
@@ -422,28 +425,28 @@ class SNPInfo:
 
 class PhenotypeInfo:
     '''
-    class for the information of phenotype
+    Class for phenotype information
 
-    Phenotypic values,  true/esimated breeding values,
+    Phenotypic values,  true/estimated breeding values,
     variance components are stored
 
     Args:
-        mean_phenotype (float): mean phenotype
+        mean_phenotype (float): Mean phenotype
         residual_var (float): Residial variance
 
     Attributes:
-        mean_pv (float): mean phenotype
-        v_e (float): residual variance
-        pheno_v (ndarray): phenotypic values
-        true_bv (ndarray): true breeding value
-        hat_bv (ndarray): estimated breeding value
-        hat_beta (ndarray): estimated fixed effects
-        hat_vg (float): estimated additvie genetic variance
-        hat_ve (float): estimated residual variance
+        mean_pv (float): Mean phenotype
+        v_e (float): Residual variance
+        pheno_v (ndarray): Phenotypic values
+        true_bv (ndarray): True breeding value
+        hat_bv (ndarray): Estimated breeding value
+        hat_beta (ndarray): Estimated fixed effects
+        hat_vg (float): Estimated additvie genetic variance
+        hat_ve (float): Estimated residual variance
     '''
     def __init__(self, mean_phenotype, residual_var):
         '''
-        constructor
+        Constructor
         '''
         self.mean_pv = mean_phenotype
         self.v_e = residual_var
@@ -462,7 +465,7 @@ class PhenotypeInfo:
         Calculate phenotype
 
         Args:
-            pro_inf (PopulationInfo class): progeny population
+            pro_inf (PopulationInfo class): Progeny population
             snp_inf (SNPInfo class): SNP information
 
         Note:
@@ -486,15 +489,15 @@ class PhenotypeInfo:
 
 def check_tuple(obj, tag, l_tuple):
     '''
-    Check an argument
+    Check the arguments of AquaBreeding class
 
-    To check if an argument is tuple and
+    Check if an argument is tuple and
     if the length of the tuple is correct
 
     Args:
-        obj (unknown): a focal variable
-        tag (str): name of the variable
-        l_tuple (int): correct tuple length
+        obj (unknown): A focal variable
+        tag (str): Name of the variable
+        l_tuple (int): Correct tuple length
     '''
     if not isinstance(obj, tuple):
         sys.exit(f'{tag} should be tuple')
@@ -502,24 +505,19 @@ def check_tuple(obj, tag, l_tuple):
         if tag in ('founder_size',  'progeny_size'):
             e_mess = '(No. males, No. females)'
         if tag == 'chrom':
-            e_mess = '(chrom no., chrom len (bp), male cM/Mb, female cM/Mb)'
+            e_mess = '(Chrom no., chrom len (bp), male cM/Mb, female cM/Mb)'
         sys.exit(f'Length of {tag} is incorrect\n{e_mess}')
 # check_tuple
 
 
 class AquaBreeding:
     '''
-    class for aquaculture breeding
-
-    Aquaculture breeding is simulated
+    Class for aquaculture breeding
 
     Args:
-        founder_size (tuple): No. females, no. males (int)
-                              in a founder population
-        progeny_size (tuple): No. females, no. males (int)
-                              in a progeny population
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
-                       (int, int, float, float)
+        founder_size (tuple): No. females, no. males in a founder population
+        progeny_size (tuple): No. females, no. males in a progeny population
+        chrom (tuple): Chrom num, chrom len (bp), female cM/Mb, male cM/Mb
         n_snp (int): No. SNPs with effect size
         effect_var (float): Variance of effect size
         mean_phenotype (float): Mean phenotype in F1
@@ -528,13 +526,13 @@ class AquaBreeding:
                      default None
 
     Attributes:
-        chrom (tuple): chrom num, chrom len, female cM/Mb, male cM/Mb
-        par_inf (PopulationInfo class): parental population info
-        pro_inf (PopulationInfo class): progeny population info
+        chrom (tuple): Chrom num, chrom len (bp), female cM/Mb, male cM/Mb
+        par_inf (PopulationInfo class): Founder/parental population
+        pro_inf (PopulationInfo class): Progeny population
         snp_inf (SNPInfo class): SNP information with effect size
-        phe_inf (PhenotypeInfo class): phenotype, breeding values,
-                                       variance components
-        cross_inf (ndarray): [[female index, male index, 0, 0],...]
+        phe_inf (PhenotypeInfo class): Phenotype information
+        cross_inf (ndarray): Female index, male index, no. female progeny,
+                             no. male progeny
         gblup_inf (SNPInfo class): SNP information for GBLUP
     '''
     def __init__(self, founder_size, progeny_size, chrom, n_snp, effect_var,
@@ -574,7 +572,7 @@ class AquaBreeding:
         Display-print parental/progeny population info
 
         Args:
-            target (str): display 'founder' or 'progeny' population
+            target (str): Display 'founder' or 'progeny' population
             n_show (int): No. individuals displayed (female/male each)
         '''
         if target == 'founder':
@@ -590,7 +588,7 @@ class AquaBreeding:
         Set SNPs in a founder popolation
 
         Simulate SNPs using msprime, following standard Wright-Fisher
-        model.  Simulate only SNPs with effect size.
+        model.
 
         Note:
             Simulate SNPs with demography is under development
@@ -608,17 +606,17 @@ class AquaBreeding:
         Define mating design
 
         Define how the individuals in a founder/parental population
-        are crossed.  Call cross_design to use some cross design that is
+        are crossed.  Call cross_design to use some cross designs that are
         already implemented.  Call custom_design to use an user's own mating
         design. custom_design should be numpy.ndarray, where 1st column is
-        female parent index, 2nd column is male parent male index, 3rd and 4th
+        female parent index, 2nd column is male parent index, 3rd and 4th
         columns are zero.
 
         Args:
-            cross_design (str): cross design of factorial cross
-                                that allows '1x(int)', or 'full' factorial
-            custom_design (np.ndarray): female index, male index. no. female
-                                        progenies, no. male progenies
+            cross_design (str): Mating design of factorial cross
+                                that allows '1x(int)' parital factorial,
+                                or 'full' factorial mating
+            custom_design (ndarray): female index, male index, 0, 0
 
         Note:
             * cross_design works when nos. females and males are the same.
@@ -645,13 +643,11 @@ class AquaBreeding:
         '''
         Calculate phenotype and breeding value
 
-        call blup.py
-
         Args:
             blup (str): If 'ABLUP', numerator relationship matrix is used
                         to estimate breeding values.  If 'GBLUP', genomic
                         relationship matrix is used.  If 'no', breeding
-                        values are not estimated.
+                        values are not estimated. Default 'ABLUP'
         '''
         # genotype matrix
         self.snp_inf.genotype_matrix(self.pro_inf)
@@ -684,8 +680,9 @@ class AquaBreeding:
             method (str): How to select from progenies such as mass
                           selection ('mass'), within-family selection
                           ('within-family'), or family selection ('family')
-            top_prop (float): Individuals with top X% breeding values are
-                              selected for within-family selection
+            top_prop (float): Select progenies with top X% breeding values
+                              in within-family selection. Set 0.0 < top_prop
+                              <= 1.0.
             n_family (int): Number of families to be selected
         '''
         se.select_parent(self.par_inf, self.pro_inf, self.phe_inf,
@@ -697,7 +694,7 @@ class AquaBreeding:
         Output inbreeding coefficient in progeny population
 
         Returns:
-            list: inbreeding coefficient
+            list: Inbreeding coefficient
         '''
         ibd_res = []
         # female
@@ -716,7 +713,7 @@ class AquaBreeding:
         Output phenotype
 
         Returns:
-            list: phenotypics values
+            list: Phenotypics values
         '''
         return list(self.phe_inf.pheno_v)
     # get_phenotype
@@ -726,7 +723,7 @@ class AquaBreeding:
         Output true breeding value
 
         Returns:
-            list: true breeding value
+            list: True breeding value
         '''
         return list(self.phe_inf.true_bv)
     # get_true_bv
@@ -736,7 +733,7 @@ class AquaBreeding:
         Output estimated breeding value
 
         Returns:
-            list: estimated breeding value
+            list: Estimated breeding value
         '''
         return list(self.phe_inf.hat_bv)
     # get_ebv
@@ -746,7 +743,7 @@ class AquaBreeding:
         Outut additive and residual variance
 
         Returns:
-            tuple: additive and residual variance
+            tuple: Additive and residual variance
         '''
         return (self.phe_inf.hat_vg, self.phe_inf.hat_ve)
     # variance_component

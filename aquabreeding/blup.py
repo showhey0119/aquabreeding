@@ -2,26 +2,23 @@
 Module for BLUP
 '''
 
-import sys
+from scipy.optimize import minimize_scalar
 import numpy as np
-import scipy
 from numba import jit
 from aquabreeding import _nrm as nrm
 
 
 def nrm_cpp(par_dict, progeny_pop, founder_size):
     '''
-    Calculate numerator relationship matrix
-
-    version 3. with C++
+    Calculate numerator relationship matrix with C++
 
     Args:
-        par_dict (dict): dictionary of parents of founders in all generations
-        progeny_pop (PopulationInfo class): progeny population info
-        founder_size (int): size of founder population
+        par_dict (dict): Dictionary of parents in founders
+        progeny_pop (PopulationInfo class): Progeny population
+        founder_size (int): Founder population size
 
     Returns:
-        n_mat (ndarray): numerator relationship matrix (n x n)
+        (ndarray: Numerator relationship matrix
     '''
     par_key = list(par_dict.keys())
     par_key.sort()
@@ -45,20 +42,20 @@ def bv_estimation(phe_inf, g_mat):
     '''
     Estimate breeding values and variance components
 
-    version 4
-    Calculating breeding values and variance components
+    Version 4:
+    Estimate breeding values and variance components
     by a restricted maximum likelihood method.
     The script is converted from the R package, rrBLUP, by
     Endelman (2011) Plant Genome 4, 250-255.
     The original method is described in
     Kang et al. (2008) Genetics 178, 1709-1723.
 
-    Arge:
-        phe_inf (PhenotypeInfo class): phenotype information
-        g_mat (ndarray): genomic/numerator relationship matrix (n x n)
+    Args:
+        phe_inf (PhenotypeInfo class): Phenotype information
+        g_mat (ndarray): Genomic/numerator relationship matrix
 
     Note:
-        Fixed effect is not implement yet other than an intercept.
+        Fixed effect is not implement yet.
     '''
     def restricted_ml(lam, n_p, theta_vec, omega_sq):
         return (n_p*np.log(np.sum(omega_sq/(theta_vec + lam))) +
@@ -85,10 +82,8 @@ def bv_estimation(phe_inf, g_mat):
     q_mat = shbs_vec[:, n_p:]
     omega_sq = ((q_mat.T @ y_vec)**2).ravel()
     set_arg = (n_sample-n_p, theta_vec, omega_sq)
-    opt_res = scipy.optimize.minimize_scalar(restricted_ml,
-                                             args=set_arg,
-                                             bounds=(1e-9, 1e9),
-                                             method='bounded')
+    opt_res = minimize_scalar(restricted_ml, args=set_arg, bounds=(1e-9, 1e9),
+                              method='bounded')
     if not opt_res.success:
         sys.exit('scipy.optimize does not work')
     opt_para = opt_res.x
@@ -114,11 +109,11 @@ def nrm_jit2(n_mat, j_stt, j_max, vec_s, vec_d):
     Calculating numerator relationship matrix with numba jit
 
     Args:
-        n_mat (ndarray): numerator relationship matrix
-        j_stt (int): founder size
-        j_max (int): the total number of founder+progeny
-        vec_s (ndarray): father (sire) ID
-        vec_d (ndarray): mother (dam) ID
+        n_mat (ndarray): Numerator relationship matrix
+        j_stt (int): Founder size
+        j_max (int): The total number of founder+progeny
+        vec_s (ndarray): Father (sire) ID
+        vec_d (ndarray): Mother (dam) ID
     '''
     for j in range(j_stt, j_max):
         pars = vec_s[j]
@@ -143,14 +138,12 @@ def nrm_jit(par_inf, pro_inf):
     '''
     Calculate numerator relationship matrix
 
-    version 4, use numba jit
-
     Args:
-        par_inf (PopulationInfo class): founder population
-        pro_inf (PopulationInfo class): progeny population
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
 
     Returns:
-        ndarray: numerator relationship matrix
+        ndarray: Numerator relationship matrix
     '''
     # parents of the founder population
     par_key = list(par_inf.d_par.keys())
@@ -186,13 +179,13 @@ def nrm_selected_ones(par_inf, pro_inf, f_val, m_val):
     Calculate numerator relationship matrix of selected ones
 
     Args:
-        par_inf (PopulationInfo class): founder population
-        pro_inf (PopulationInfo class): progeny population
-        f_val (ndarray): female index of selected progenies
-        m_val (ndarray): male index of selected progenies
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
+        f_val (ndarray): Female index of selected progenies
+        m_val (ndarray): Male index of selected progenies
 
-        Returns:
-            ndarray: numerator relationship matrix
+    Returns:
+        ndarray: Numerator relationship matrix
     '''
     # parents of the founder population
     par_key = list(par_inf.d_par.keys())
@@ -225,12 +218,12 @@ def nrm_selected_ones(par_inf, pro_inf, f_val, m_val):
 
 def ablup(phe_inf, par_inf, pro_inf):
     '''
-    BLUP with numerator relationship matrix (A-matrix)
+    BLUP with numerator relationship matrix (ABLUP)
 
     Args:
-        phe_inf (PhenotypeInfo class): phenotype information
-        par_inf (PopulationInfo class): founder poplation
-        pro_inf (PopulationInfo class): progeny population
+        phe_inf (PhenotypeInfo class): Phenotype information
+        par_inf (PopulationInfo class): Founder poplation
+        pro_inf (PopulationInfo class): Progeny population
     '''
     # numerator relationship matrix
     a_mat = nrm_jit(par_inf, pro_inf)
@@ -242,12 +235,12 @@ def ablup(phe_inf, par_inf, pro_inf):
 @jit(cache=True)
 def convert_gmatrix(gen_array, p_mat, gmat_denom):
     '''
-    Convert  genotype matrix into G matrix for GBLUP
+    Convert genotype matrix into G matrix for GBLUP
 
-    Arrgs:
-        gen_array (ndarray): genotype matrix
-        p_mat (ndarray): allele freq matrix (P matrix)
-        gmat_denom (float): normalize G matrix by this
+    Args:
+        gen_array (ndarray): Genotype matrix
+        p_mat (ndarray): Allele frequency matrix (P matrix)
+        gmat_denom (float): Normalize G matrix by this
 
     Returns:
         ndarray: G matrix
@@ -264,11 +257,11 @@ def convert_gmatrix(gen_array, p_mat, gmat_denom):
 
 def gblup(phe_inf, gblup_inf):
     '''
-    GBLUP
+    BLUP with genomic relationship matrix (GBLUP)
 
     Args:
-        phe_inf (PhenotypeInfo class): phenotype information
-        gblup_inf (SNPInfo class): SNPs for GBLUP
+        phe_inf (PhenotypeInfo class): Phenotype information
+        gblup_inf (SNPInfo class): SNP information for GBLUP
     '''
     # calculate G matrix from genotype matrix
     g_mat = convert_gmatrix(gblup_inf.gen_mat, gblup_inf.p_mat,
