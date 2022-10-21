@@ -291,7 +291,7 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
         target (str): 'bv' (breeding value), 'phenotype' (phenotype), or
                        'random' (random) selection
         method (str): 'mass' (mass selection), 'within-family' (within-
-                      family selection), or 'family' (family selection) 
+                      family selection), or 'family' (family selection)
         top_prop (float): Individual with top X% breeding values are used
                           in within-family selection
         n_family (int): Number of families to be selected in family selection

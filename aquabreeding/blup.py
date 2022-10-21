@@ -2,6 +2,7 @@
 Module for BLUP
 '''
 
+import sys
 from scipy.optimize import minimize_scalar
 import numpy as np
 from numba import jit
