@@ -8,7 +8,7 @@ This is a beta version.  Please do not use it for any publications.
 
 
 ## Last update
-- 10/19/2022
+- 10/26/2022
 
 
 ## Requirements
@@ -42,6 +42,9 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
+- Version 0.7.2 is released (10/26/2022)  
+    - New mating design that minimizes inbreeding  
+
 - Version 0.7.1 is released (10/19/2022)  
     - Family selection is implemented  
 
