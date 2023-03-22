@@ -5,7 +5,7 @@ Module for selecting individuals with large breeding values
 import sys
 from math import isclose
 from copy import deepcopy
-from random import choice, shuffle
+from random import choice
 from operator import itemgetter
 import numpy as np
 from aquabreeding import blup as bl
@@ -242,13 +242,13 @@ def get_furthest_one(n_mat, x_index, y_ls):
         n_mat (ndarray): Numerator relationship matrix
         x_index (int): female/male index
         y_ls (list): remained male/female index list
-    
+
     Returns:
         int: index of distantly related one
     '''
     tmp_ls = []
-    for y in y_ls:
-        tmp_ls.append([y, n_mat[x_index][y]])
+    for y_1 in y_ls:
+        tmp_ls.append([y_1, n_mat[x_index][y_1]])
     # minimum inbreeding coefficient
     min_ic = min([i[1] for i in tmp_ls])
     tmp_ls2 = [i[0] for i in tmp_ls if isclose(i[1], min_ic)]
@@ -328,7 +328,7 @@ def nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf):
     '''
     # numerator relationship matrix of selected ones
     n_mat = bl.nrm_selected_ones(par_inf, pro_inf, f_val, m_val)
-    # arrangement of femals and males in mating design 
+    # arrangement of femals and males in mating design
     f_2, m_2 = arrange_parents(n_mat, cross_inf, par_inf.n_popf,
                                par_inf.n_popm)
     # female
@@ -343,45 +343,6 @@ def nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf):
     par_inf.new_founder_id()
 # nextgen_parent
 
-
-def nextgen_parents_old(par_inf, pro_inf, f_val, m_val, cross_inf):
-    '''
-    Set next-generation parents as inbreeding is minimized
-
-    Note:
-        Deprecated.  Random search for arrangements of females
-        and males in mating designs is not efficient.
-    '''
-    # numerator relationship matrix of selected ones
-    n_mat = bl.nrm_selected_ones(par_inf, pro_inf, f_val, m_val)
-    # random search for minimum mean and max IBD
-    res_ibd = []
-    for i in range(100000):
-        f_1 = list(range(par_inf.n_popf))
-        m_1 = list(range(par_inf.n_popm))
-        shuffle(f_1)
-        shuffle(m_1)
-        ibd_tmp = []
-        for k_1, k_2, k_3, k_4 in cross_inf:
-            ibd_tmp.append(n_mat[f_1[k_1]][m_1[k_2]+par_inf.n_popf])
-        mean_ibd = np.mean(ibd_tmp)
-        max_ibd = max(ibd_tmp)
-        res_ibd.append([f_1, m_1, mean_ibd, max_ibd])
-    # get pairs with minimum inbreeding
-    res_ibd.sort(key=itemgetter(2, 3))
-    f_2 = res_ibd[0][0]
-    m_2 = res_ibd[0][1]
-    # female
-    for i in range(par_inf.n_popf):
-        pro_i = f_val[f_2[i]]
-        par_inf.pop_f[i] = deepcopy(pro_inf.pop_f[pro_i])
-    # male
-    for i in range(par_inf.n_popm):
-        pro_i = m_val[m_2[i]]
-        par_inf.pop_m[i] = deepcopy(pro_inf.pop_m[pro_i])
-    # add new parents' ID
-    par_inf.new_founder_id()
-# nextgen_parent_old
 
 def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
                   top_prop, n_family):

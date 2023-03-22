@@ -159,6 +159,143 @@ def generate_snp(n_sample, n_snp):
 # generate_snp
 
 
+def get_index_structured(n_pop, n_female, n_male):
+    '''
+    Get index of females and males in the result of
+    msprime with population structure
+
+    Args:
+        n_pop (int): The number of population
+        n_female (tuple): The numbers of females in each population
+        n_male (tuple): The numbers of males in each population
+
+    Returns:
+        list, list: lists of female/male index
+    '''
+    tmp_i = 0
+    f_id = []
+    m_id = []
+    for i in range(n_pop):
+        # female
+        for _ in range(2*n_female[i]):
+            f_id.append(tmp_i)
+            tmp_i += 1
+        # male
+        for _ in range(2*n_male[i]):
+            m_id.append(tmp_i)
+            tmp_i += 1
+    return f_id, m_id
+# get_index_structured
+
+
+def generate_snp_structured(n_pop, fst_value, n_female, n_male,
+                            n_snp):
+    '''
+    Generate independent SNPs under standard
+    Wright-Fisher model
+
+    Args:
+        n_pop (int): The number of populations
+        fst_value (float): Average Fst value among populations
+        n_female (tuple): The numbers of females in each population
+        n_male (tuple): The number of males in each population
+        n_snp (int): The number of SNPs
+
+    Returns:
+        ndarray: SNP matrix
+    '''
+    rate = (4e-8, 2e-7)  # to simulate almost independent SNPs
+    # index of females and males haplotype
+    sum_f = 2*sum(n_female)
+    sum_m = 2*sum(n_male)
+    f_id, m_id = get_index_structured(n_pop, n_female, n_male)
+    # Set demography
+    each_pop = 10_000
+    time_div = 2.0 * each_pop * (1.0 / (1.0 - fst_value) - 1.0)
+    pop_size = [each_pop]*(n_pop+1)
+    demography = mp.Demography.isolated_model(initial_size=pop_size)
+    demography.add_population_split(time=time_div,
+                                    derived=list(range(n_pop)),
+                                    ancestral=n_pop)
+    # sample size
+    sample_dict = {}
+    for i in range(n_pop):
+        sample_dict[i] = n_female[i] + n_male[i]
+    # output array
+    out_f = np.empty((0, sum_f), dtype=np.int64)
+    out_m = np.empty((0, sum_m), dtype=np.int64)
+    # run msprime
+    gsa_count = 0
+    while True:
+        gsa_ts = mp.sim_ancestry(samples=sample_dict,
+                                 recombination_rate=rate[1],
+                                 sequence_length=200,
+                                 demography=demography)
+        gsa_ts = mp.sim_mutations(gsa_ts,
+                                  rate=rate[0],
+                                  model=mp.BinaryMutationModel(),
+                                  discrete_genome=False,
+                                  keep=False)
+        for g_ts in gsa_ts.variants():
+            tmp_gen = g_ts.genotypes
+            tmp_f = tmp_gen[f_id]
+            tmp_m = tmp_gen[m_id]
+            out_f = np.append(out_f, np.array([tmp_f]), axis=0)
+            out_m = np.append(out_m, np.array([tmp_m]), axis=0)
+            gsa_count += 1
+            if gsa_count == n_snp:
+                gsa_out = np.concatenate([out_f, out_m], axis=1)
+                return gsa_out.T
+# generate_snp_structured
+
+
+def sfs_structured(n_samples, n_pop, fst_value):
+    '''
+    Calculate site-frequency spectrum in structured populations
+
+    Args:
+        n_samples (tuple): The numbers of samples in subpopulations
+        n_pop (int): The number of subpoplations
+        fst_value (float): Average Fst value among subpopulations
+    '''
+    rate = (4e-8, 2e-7)  # to simulate almost independent SNPs
+    # Set demography
+    each_pop = 10_000
+    time_div = 2.0 * each_pop * (1.0 / (1.0 - fst_value) - 1.0)
+    pop_size = [each_pop]*(n_pop+1)
+    demography = mp.Demography.isolated_model(initial_size=pop_size)
+    demography.add_population_split(time=time_div,
+                                    derived=list(range(n_pop)),
+                                    ancestral=n_pop)
+    # sample size
+    sample_dict = {}
+    for i in range(n_pop):
+        sample_dict[i] = n_samples[i]
+    # sfs dict
+    sfs_dict = {}
+    gsa_count = 0
+    while True:
+        gsa_ts = mp.sim_ancestry(samples=sample_dict,
+                                 recombination_rate=rate[1],
+                                 sequence_length=200,
+                                 demography=demography)
+        gsa_ts = mp.sim_mutations(gsa_ts,
+                                  rate=rate[0],
+                                  model=mp.BinaryMutationModel(),
+                                  discrete_genome=False,
+                                  keep=False)
+        for g_ts in gsa_ts.variants():
+            freq_q = sum(g_ts.genotypes)
+            sfs_dict.setdefault(freq_q, 0)
+            sfs_dict[freq_q] += 1
+            gsa_count += 1
+            if gsa_count == 100_000:
+                for ky in sfs_dict:
+                    sfs_dict[ky] /= 100_000
+                return sfs_dict
+# sfs_structured
+
+
 def main():
     '''
     main

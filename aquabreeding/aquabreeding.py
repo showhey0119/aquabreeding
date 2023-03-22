@@ -1,7 +1,7 @@
 '''
 Module for simulating aquaculture breeding
 
-version 0.7.1
+version 0.8.0
 
 aquabreeding allows simulating an aquaculture breeding program.
 
@@ -25,7 +25,7 @@ Note:
 Todo:
     * Dominance and epistasis
     * Multiple phenotypes
-    * Founders from structured populations
+    * Founders from a population with exponential growth or bottleneck
 '''
 
 import sys
@@ -36,6 +36,55 @@ from aquabreeding import mating as mt
 from aquabreeding import gametogenesis as gg
 from aquabreeding import blup as bl
 from aquabreeding import selection as se
+
+
+def vs_standard(n_founder, v_p, h_2, n_snp):
+    '''
+    Convert V and h2 into the variance of effect size
+    in a standard Wright-Fisher population
+
+    Args:
+        n_founder (int): no. founders
+        v_p (float): Variance of phenotype
+        h_2 (float): Heritability
+        n_snp (int): The number of SNPs
+    '''
+    n_sample = 2*n_founder
+    # additive genetic variance
+    v_g = h_2 * v_p
+    # site frequency spectrum
+    w_a = np.sum([1.0/i for i in range(1, n_sample)])
+    ex_sfs = [1.0/(w_a*i) for i in range(1, n_sample)]
+    # variance = E[p(1-p)]
+    p_der = np.sum([ex_sfs[i]*((i+1.0)/n_sample)*((n_sample-i-1.0)/n_sample) for i in range(n_sample-1)])
+    # for diploid
+    print(f'Vs = {v_g/n_snp/p_der/2.0}')
+# vs_standard 
+
+
+def vs_structured(n_samples, n_pop, fst_value, v_p, h_2, n_snp):
+    '''
+    Convert V adn h2 into the variance of effect size
+    in structured populaions
+
+    Args:
+        n_samples (tuple): The numbers of samples in each population
+        n_pop (int): The number of population
+        fst_value (float): Average Fst among populations
+        v_p (float): Variance of phenotype
+        h_2 (float): Heritability
+        n_snp (int): The number of SNPs
+    '''
+    # additive genetic variance
+    v_g = h_2 * v_p
+    # site-frequency spectrum
+    ex_sfs = pg.sfs_structured(n_samples, n_pop, fst_value)
+    # variance = E[p(1-p)]
+    n_all = 2 * sum(n_samples)
+    p_der = np.sum([ex_sfs[i]*(i/n_all)*((n_all-i)/n_all) for i in ex_sfs])
+    # for diploid
+    print(f'Vs = {v_g/n_snp/p_der/2.0}')
+# vs_structured
 
 
 class ChromInfo:
@@ -410,6 +459,23 @@ class SNPInfo:
                                        n_snp=self.n_snp)
     # msprime_standard
 
+    def msprime_structured_pop(self, n_pop, fst_value, n_female, n_male):
+        '''
+        Simulate SNPs in structured populations
+
+        Args:
+            n_pop (int): The number of populations
+            fst_value (float): Average Fst value among populations
+            n_female (tuple): The numbers of females in populations
+            n_male (tuple): The number of males in populations
+        '''
+        self.par_snp = pg.generate_snp_structured(n_pop=n_pop,
+                                                  fst_value=fst_value,
+                                                  n_female=n_female,
+                                                  n_male=n_male,
+                                                  n_snp=self.n_snp)
+    # msprime_structured_pop
+
     def genotype_matrix(self, pro_inf):
         '''
         Get SNP amd genotype matrix of progenies
@@ -506,6 +572,8 @@ def check_tuple(obj, tag, l_tuple):
             e_mess = '(No. males, No. females)'
         if tag == 'chrom':
             e_mess = '(Chrom no., chrom len (bp), male cM/Mb, female cM/Mb)'
+        if tag in ('n_female', 'n_male'):
+            e_mess = 'Length should be equal to be n_pop'
         sys.exit(f'Length of {tag} is incorrect\n{e_mess}')
 # check_tuple
 
@@ -601,6 +669,35 @@ class AquaBreeding:
             self.gblup_inf.p_matrix()
     # snp_standard
 
+    def snp_structured_pop(self, n_pop, fst_value, n_female, n_male):
+        '''
+        Set SNPs from structured populations
+
+        Simulate SNPs using msprime, following an isolated population
+        model.
+
+        Args:
+            n_pop (int): The number of populations
+            fst_value (float): Average Fst value among populations
+            n_female (tuple): The numbers of females in populations
+            n_male (tuple): The number of males in populations
+        '''
+        # check args
+        check_tuple(n_female, 'n_female', n_pop)
+        check_tuple(n_male, 'n_male', n_pop)
+        if sum(n_female) != self.par_inf.n_popf:
+            sys.exit(f'Sum of n_female is not {self.par_inf.n_popf}')
+        if sum(n_male) != self.par_inf.n_popm:
+            sys.exit(f'Sum of n_male is not {self.par_inf.n_popm}')
+        # SNPs with fixed effect
+        self.snp_inf.msprime_structured_pop(n_pop, fst_value, n_female, n_male)
+        # SNPs for GBLUP
+        if self.gblup_inf is not None:
+            self.gblup_inf.msprime_structured_pop(n_pop, fst_value, n_female,
+                                                  n_male)
+            self.gblup_inf.p_matrix()
+    # snp_structured_pop
+
     def mating_design(self, cross_design=None, custom_design=None):
         '''
         Define mating design
@@ -632,11 +729,14 @@ class AquaBreeding:
             sys.exit('Either cross_design or custom_design should be set')
     # mating_design
 
-    def mating(self):
+    def mating(self, r_a=True):
         '''
         Mate founder/parental individuals to produce progenies
+
+        Args:
+            r_a (bool): random allocation or not
         '''
-        mt.produce_progeny(self.cross_inf, self.par_inf, self.pro_inf)
+        mt.produce_progeny(self.cross_inf, self.par_inf, self.pro_inf, r_a)
     # mating
 
     def breeding_value(self, blup='ABLUP'):

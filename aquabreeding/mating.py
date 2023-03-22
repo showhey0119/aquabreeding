@@ -160,7 +160,7 @@ def produce_progeny_female_male(cross_inf, par_inf, pro_ls,
 # produce_progeny_female_male
 
 
-def produce_progeny(cross_inf, par_inf, pro_inf):
+def produce_progeny(cross_inf, par_inf, pro_inf, r_a):
     '''
     Produce progenies by crossing founder/parental individuals
 
@@ -169,15 +169,17 @@ def produce_progeny(cross_inf, par_inf, pro_inf):
                              no. female progeny, no. male progeny
         par_inf (PopulationInfo class): Founder population
         pro_inf (PopulationInfo class): Progeny population
+        ra (bool): random allocation or not
 
     Note:
         The numbers of female/male progenies are stored in
         2nd and 3rd colums in cross_inf, respectively.
     '''
-    # simulate number of progenies in each cross for female
-    random_allocation(cross_inf, pro_inf.n_popf, 2)
-    # for male
-    random_allocation(cross_inf, pro_inf.n_popm, 3)
+    if r_a:
+        # simulate number of progenies in each cross for female
+        random_allocation(cross_inf, pro_inf.n_popf, 2)
+        # for male
+        random_allocation(cross_inf, pro_inf.n_popm, 3)
     # produce female progeny
     produce_progeny_female_male(cross_inf, par_inf, pro_inf.pop_f,
                                 pro_inf.n_popf, 2)

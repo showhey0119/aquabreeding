@@ -8,12 +8,16 @@ This is a beta version.  Please do not use it for any publications.
 
 
 ## Last update
-- 10/26/2022
+- 03/22/2023
+
+
+## Note
+- numba does not support python 3.11, so python 3.9 or 3.10 must be used.  
 
 
 ## Requirements
 - macOS (No guarantee that it will work on unix)
-- python3  
+- python3 (3.9 or 3.10)  
   (e.g., brew install python3)
 - python libraries (automatically installed)
     - numpy
@@ -32,9 +36,13 @@ This is a beta version.  Please do not use it for any publications.
 
 ## Installation
 `git clone --recursive https://github.com/showhey0119/aquabreeding`  
-`git submodule update --init --recursive`  
 `cd ./aquabreeding`  
+`git submodule update --init --recursive`  
 `pip3 install .`  
+
+If the installation fails, try
+`pip3 install -e .`  
+
 
 
 ## Quick startup
@@ -42,6 +50,9 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
+- Version 0.8.0 is released (03/22/2023)  
+    - Breeding parents are sampled either from standar Wright-Fisher population or sutrucutred population.
+
 - Version 0.7.2 is released (10/26/2022)  
     - New mating design that minimizes inbreeding  
 

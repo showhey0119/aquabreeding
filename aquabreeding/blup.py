@@ -42,19 +42,16 @@ def nrm_cpp(par_dict, progeny_pop, founder_size):
 def bv_estimation(phe_inf, g_mat):
     '''
     Estimate breeding values and variance components
-
-    Version 4:
+    Version 5:
     Estimate breeding values and variance components
     by a restricted maximum likelihood method.
     The script is converted from the R package, rrBLUP, by
     Endelman (2011) Plant Genome 4, 250-255.
     The original method is described in
     Kang et al. (2008) Genetics 178, 1709-1723.
-
     Args:
         phe_inf (PhenotypeInfo class): Phenotype information
         g_mat (ndarray): Genomic/numerator relationship matrix
-
     Note:
         Fixed effect is not implement yet.
     '''
@@ -65,6 +62,12 @@ def bv_estimation(phe_inf, g_mat):
     n_sample = y_vec.shape[0]
     # design matrix of X and Z
     x_mat = np.ones((n_sample, 1), dtype=np.float64)
+    u_1, s_1, vh_1 = np.linalg.svd(x_mat)
+    r_i = int(max(np.where(s_1 > 1e-8)))
+    if r_i == 0:
+        x_mat = u_1[:,r_i].reshape(n_sample, 1)
+    else:
+        sys.exit('Something wrong in bv_estimation')
     z_mat = np.identity(n_sample, dtype=np.float64)
     # the number of fixed effects
     n_p = x_mat.shape[1]
@@ -96,11 +99,12 @@ def bv_estimation(phe_inf, g_mat):
     xt_hinv = xt_mat @ h_inv
     w_mat = xt_hinv @ x_mat
     # estimate fixed effects
-    phe_inf.hat_beta = np.linalg.solve(w_mat, xt_hinv @ y_vec)
+    phe_inf.hat_beta = np.linalg.solve(w_mat, xt_hinv @ y_vec)    
     kz_t = g_mat @ z_mat.T
     kzt_hinv = kz_t @ h_inv
     # estimate breeding value
     phe_inf.hat_bv = kzt_hinv @ (y_vec - x_mat @ phe_inf.hat_beta)
+    phe_inf.hat_beta = x_mat.mean(axis=0) @ phe_inf.hat_beta
 # gebv_calculation
 
 
