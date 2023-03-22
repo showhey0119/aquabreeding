@@ -51,7 +51,7 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 ## History
 - Version 0.8.0 is released (03/22/2023)  
-    - Breeding parents are sampled either from standar Wright-Fisher population or sutrucutred population.
+    - Breeding parents are sampled either from a standar Wright-Fisher population or structured population.
 
 - Version 0.7.2 is released (10/26/2022)  
     - New mating design that minimizes inbreeding  
