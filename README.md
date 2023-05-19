@@ -50,7 +50,7 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
-- Version 0.8.1 is released (05/XX/2023)  
+- Version 0.8.1 is released (05/19/2023)  
     - Bug fix  
 
 - Version 0.8.0 is released (03/22/2023)  
