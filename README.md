@@ -8,11 +8,11 @@ This is a beta version.  Please do not use it for any publications.
 
 
 ## Last update
-- 03/22/2023
+- 05/19/2023
 
 
 ## Note
-- numba does not support python 3.11, so python 3.9 or 3.10 must be used.  
+- Aquabreeding does not yet support python3.11.  
 
 
 ## Requirements
@@ -50,6 +50,9 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
+- Version 0.8.1 is released (05/XX/2023)  
+    - Bug fix  
+
 - Version 0.8.0 is released (03/22/2023)  
     - Breeding parents are sampled either from a standar Wright-Fisher population or structured population.
 

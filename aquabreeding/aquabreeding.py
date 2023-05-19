@@ -1,7 +1,7 @@
 '''
 Module for simulating aquaculture breeding
 
-version 0.8.0
+version 0.8.1
 
 aquabreeding allows simulating an aquaculture breeding program.
 
@@ -56,30 +56,31 @@ def vs_standard(n_founder, v_p, h_2, n_snp):
     w_a = np.sum([1.0/i for i in range(1, n_sample)])
     ex_sfs = [1.0/(w_a*i) for i in range(1, n_sample)]
     # variance = E[p(1-p)]
-    p_der = np.sum([ex_sfs[i]*((i+1.0)/n_sample)*((n_sample-i-1.0)/n_sample) for i in range(n_sample-1)])
+    p_der = np.sum([ex_sfs[i]*((i+1.0)/n_sample)*((n_sample-i-1.0)/n_sample)
+                   for i in range(n_sample-1)])
     # for diploid
     print(f'Vs = {v_g/n_snp/p_der/2.0}')
-# vs_standard 
+# vs_standard
 
 
 def vs_structured(n_samples, n_pop, fst_value, v_p, h_2, n_snp):
     '''
-    Convert V adn h2 into the variance of effect size
-    in structured populaions
+    Convert Vp and h^2 into the variance of effect size
+    in a structured populaion
 
     Args:
-        n_samples (tuple): The numbers of samples in each population
-        n_pop (int): The number of population
-        fst_value (float): Average Fst among populations
+        n_samples (tuple): The numbers of samples in subpopulations
+        n_pop (int): The number of subpopulations
+        fst_value (float): Average Fst among subpopulations
         v_p (float): Variance of phenotype
         h_2 (float): Heritability
         n_snp (int): The number of SNPs
     '''
-    # additive genetic variance
+    # Additive genetic variance
     v_g = h_2 * v_p
-    # site-frequency spectrum
+    # Site-frequency spectrum
     ex_sfs = pg.sfs_structured(n_samples, n_pop, fst_value)
-    # variance = E[p(1-p)]
+    # Variance = E[p(1-p)]
     n_all = 2 * sum(n_samples)
     p_der = np.sum([ex_sfs[i]*(i/n_all)*((n_all-i)/n_all) for i in ex_sfs])
     # for diploid
@@ -406,8 +407,6 @@ class SNPInfo:
                            (rows: genotype, column: loci)
         effect_size (ndarray): Effect size of SNPs
         snp_dict (dict): Chromosome and position of SNPs
-        p_mat (ndarray): Allele frequency matrix (P matrix)
-        gmat_denom (float): Denominator of G matrix
     '''
     def __init__(self, n_snp, effect_var, founder_size, progeny_size,
                  chrom):
@@ -434,20 +433,7 @@ class SNPInfo:
             self.snp_dict[i] = {}
             self.snp_dict[i]['chrom'] = rand_c[i]
             self.snp_dict[i]['pos'] = rand_p[i]
-        # for G matrix
-        self.p_mat = np.full(self.n_snp, -7, dtype=np.float64)  # W = M - 2P
-        self.gmat_denom = 0.0  # denominator of G matrix
     # __init__
-
-    def p_matrix(self):
-        '''
-        P matrix for calculating G matrix
-        '''
-        for i in range(self.n_snp):
-            freq_1 = np.sum(self.par_snp[:, i])/self.n_founder/2.0
-            self.p_mat[i] = freq_1
-            self.gmat_denom += 2.0*freq_1*(1.0-freq_1)
-    # p_matrix
 
     def msprime_standard(self):
         '''
@@ -666,7 +652,6 @@ class AquaBreeding:
         # SNPs for GBLUP
         if self.gblup_inf is not None:
             self.gblup_inf.msprime_standard()
-            self.gblup_inf.p_matrix()
     # snp_standard
 
     def snp_structured_pop(self, n_pop, fst_value, n_female, n_male):
@@ -695,7 +680,6 @@ class AquaBreeding:
         if self.gblup_inf is not None:
             self.gblup_inf.msprime_structured_pop(n_pop, fst_value, n_female,
                                                   n_male)
-            self.gblup_inf.p_matrix()
     # snp_structured_pop
 
     def mating_design(self, cross_design=None, custom_design=None):

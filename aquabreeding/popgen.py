@@ -290,8 +290,8 @@ def sfs_structured(n_samples, n_pop, fst_value):
             sfs_dict[freq_q] += 1
             gsa_count += 1
             if gsa_count == 100_000:
-                for ky in sfs_dict:
-                    sfs_dict[ky] /= 100_000
+                for k_y in sfs_dict:
+                    sfs_dict[k_y] /= 100_000
                 return sfs_dict
 # sfs_structured
 

@@ -123,17 +123,17 @@ class CMakeBuild(build_ext):
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
     name="aquabreeding",
-    version="0.8.0",
+    version="0.8.1",
     author="Shohei Takuno",
     author_email="no@e.mail",
-    description="Simulation for aquacultur breeding",
+    description="Simulation for aquaculture breeding",
     long_description="",
     packages=find_packages(),
     ext_modules=[CMakeExtension("aquabreeding._nrm")],
     cmdclass={"build_ext": CMakeBuild},
     zip_safe=False,
     extras_require={"test": ["pytest>=6.0"]},
-    python_requires=">=3.9",
+    python_requires=">=3.9, <3.11",
     install_requires=[
         'numpy',
         'scipy',

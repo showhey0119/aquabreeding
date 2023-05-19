@@ -65,7 +65,7 @@ def bv_estimation(phe_inf, g_mat):
     u_1, s_1, vh_1 = np.linalg.svd(x_mat)
     r_i = int(max(np.where(s_1 > 1e-8)))
     if r_i == 0:
-        x_mat = u_1[:,r_i].reshape(n_sample, 1)
+        x_mat = u_1[:, r_i].reshape(n_sample, 1)
     else:
         sys.exit('Something wrong in bv_estimation')
     z_mat = np.identity(n_sample, dtype=np.float64)
@@ -99,7 +99,7 @@ def bv_estimation(phe_inf, g_mat):
     xt_hinv = xt_mat @ h_inv
     w_mat = xt_hinv @ x_mat
     # estimate fixed effects
-    phe_inf.hat_beta = np.linalg.solve(w_mat, xt_hinv @ y_vec)    
+    phe_inf.hat_beta = np.linalg.solve(w_mat, xt_hinv @ y_vec)
     kz_t = g_mat @ z_mat.T
     kzt_hinv = kz_t @ h_inv
     # estimate breeding value
@@ -238,24 +238,29 @@ def ablup(phe_inf, par_inf, pro_inf):
 
 
 @jit(cache=True)
-def convert_gmatrix(gen_array, p_mat, gmat_denom):
+def convert_gmatrix(gen_array):
     '''
     Convert genotype matrix into G matrix for GBLUP
 
     Args:
         gen_array (ndarray): Genotype matrix
-        p_mat (ndarray): Allele frequency matrix (P matrix)
-        gmat_denom (float): Normalize G matrix by this
 
     Returns:
         ndarray: G matrix
     '''
-    n_cols = gen_array.shape[1]
-    # calculate denominator for normalizing the matrix
+    n_rows, n_cols = gen_array.shape
+    # allele frequency
+    freq_q = np.ones(n_cols)
     for i in range(n_cols):
-        # i th locus
-        gen_array[:, i] -= 2.0 * p_mat[i]
-    g_mat = gen_array @ gen_array.T / gmat_denom
+        freq_q[i] = np.mean(gen_array[:, i])/2.0
+    # Remove monomorphic
+    poly_snp = freq_q * (1.0 - freq_q) > 1e-10
+    freq_q = freq_q[poly_snp]
+    # Genomic relationship matrix
+    var_a = 2 * np.mean(freq_q * (1.0 - freq_q))
+    w_mat = gen_array[:, poly_snp] - 2.0 * freq_q
+    n_poly = len(freq_q)
+    g_mat = w_mat @ w_mat.T / var_a / n_poly
     return g_mat
 # convert_gmatrix
 
@@ -269,8 +274,7 @@ def gblup(phe_inf, gblup_inf):
         gblup_inf (SNPInfo class): SNP information for GBLUP
     '''
     # calculate G matrix from genotype matrix
-    g_mat = convert_gmatrix(gblup_inf.gen_mat, gblup_inf.p_mat,
-                            gblup_inf.gmat_denom)
+    g_mat = convert_gmatrix(gblup_inf.gen_mat)
     # estimate breeding value and variance component
     bv_estimation(phe_inf, g_mat)
 # gblup
