@@ -16,7 +16,7 @@ This is a beta version.  Please do not use it for any publications.
 
 
 ## Requirements
-- macOS (No guarantee that it will work on unix)
+- macOS, Linux
 - python3 (3.9 or 3.10)  
   (e.g., brew install python3)
 - python libraries (automatically installed)
