@@ -2,7 +2,7 @@
 
 Aquabreeding software is a python tool for simulating aquaculture breeding.
 
-Aquabreeding generates a founder population using coalescent simulation implemented in [msprime](https://tskit.dev/msprime/docs/stable/intro.html).  A progeny population is produced by crossing the founder individuals, and the progenies with larger breeding/phenotypic values are selected as the founder of the next generation.  Phenotypic values, breeding values, variance components, and inbreeding coefficient are calculated in each generation.
+Aquabreeding generates a founder population using coalescent simulation implemented in [msprime](https://tskit.dev/msprime/docs/stable/intro.html).  A progeny population is produced by crossing the founder individuals, and the progenies with larger breeding/phenotypic values are selected as parents of the next generation.  Phenotypic values, breeding values, variance components, and inbreeding coefficient are calculated in each generation.
 
 This is a beta version.  Please do not use it for any publications.
 
