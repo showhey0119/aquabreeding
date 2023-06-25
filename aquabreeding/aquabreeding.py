@@ -1,20 +1,19 @@
 '''
 Module for simulating aquaculture breeding
 
-version 0.8.1
+version 0.8.2
 
-aquabreeding allows simulating an aquaculture breeding program.
+Aquabreeding allows simulating aquaculture breeding.
 
 A founder population is generated together with coalesent simulation,
 implemented in msprime.
 
-Progenies are produced following some implemented mating scheme or
+Progenies are produced following some implemented mating schemes or
 user's own setting.
 
 The individuals with large phenotypic/breeding values are selected.
-Mass selection, within-family selection, and family selection  are implemented.
-The selected ones are used as the parental population in the next
-generation.
+Mass selection, within-family selection, and family selection are implemented.
+The selected ones are used as parentsin the next generation.
 
 Phenotype, true/estimated breeding value, inbreeding coefficient,
 and variance components are output.
@@ -59,6 +58,7 @@ def vs_standard(n_founder, v_p, h_2, n_snp):
     p_der = np.sum([ex_sfs[i]*((i+1.0)/n_sample)*((n_sample-i-1.0)/n_sample)
                    for i in range(n_sample-1)])
     # for diploid
+    print(f'Ve = {(1.0-h_2) * v_p}')
     print(f'Vs = {v_g/n_snp/p_der/2.0}')
 # vs_standard
 
@@ -84,6 +84,7 @@ def vs_structured(n_samples, n_pop, fst_value, v_p, h_2, n_snp):
     n_all = 2 * sum(n_samples)
     p_der = np.sum([ex_sfs[i]*(i/n_all)*((n_all-i)/n_all) for i in ex_sfs])
     # for diploid
+    print(f'Ve = {(1.0-h_2) * v_p}')
     print(f'Vs = {v_g/n_snp/p_der/2.0}')
 # vs_structured
 
