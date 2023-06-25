@@ -654,7 +654,7 @@ class AquaBreeding:
         Args:
             new_size (tuple): The new numbers of founders
         '''
-        par_inf.change_parent_num(new_size)
+        self.par_inf.change_parent_num(new_size)
     # change_parnum
 
     def print_pop(self, target='founder', n_show=10):
