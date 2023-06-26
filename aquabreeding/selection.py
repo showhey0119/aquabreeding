@@ -66,7 +66,7 @@ def family_select_value(pro_inf, select_val, fam_d, tmp_bv, f_m):
 # family_select_value
 
 
-def get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop):
+def get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop, select_size):
     '''
     Get Index or selected progenies
 
@@ -85,26 +85,26 @@ def get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop):
         - ndarray: Index of females
         - ndarray: Index of males
     '''
-    f_val = np.full(par_inf.n_popf, -7, dtype=np.int64)
-    m_val = np.full(par_inf.n_popm, -7, dtype=np.int64)
+    f_val = np.full(select_size[0], -7, dtype=np.int64)
+    m_val = np.full(select_size[1], -7, dtype=np.int64)
     n_fval = n_mval = 0
     n_tolerant = 0  # how many times progenies are selected in a family
     n_p2 = int(top_prop * (pro_inf.n_popf + pro_inf.n_popm))
     if n_p2 < (par_inf.n_popf + par_inf.n_popm):
         sys.exit('top_prop is too small')
-    while n_fval != par_inf.n_popf or n_mval != par_inf.n_popm:
+    while n_fval != select_size[0] or n_mval != select_size[1]:
         for i in range(n_p2):
             if tmp_bv[i][0] == -7:
                 continue
             if fam_d[tmp_bv[i][1]] != n_tolerant:
                 continue
             if tmp_bv[i][3] == 0:  # female
-                if n_fval == par_inf.n_popf:
+                if n_fval == select_size[0]:
                     continue
                 f_val[n_fval] = tmp_bv[i][0]
                 n_fval += 1
             else:  # male
-                if n_mval == par_inf.n_popm:
+                if n_mval == select_size[1]:
                     continue
                 m_val[n_mval] = tmp_bv[i][0]
                 n_mval += 1
@@ -117,7 +117,7 @@ def get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop):
 # get_index
 
 
-def within_family_selection(par_inf, pro_inf, select_val, top_prop):
+def within_family_selection(par_inf, pro_inf, select_val, top_prop, select_size):
     '''
     Get index of progenies by within-family selection
 
@@ -140,7 +140,7 @@ def within_family_selection(par_inf, pro_inf, select_val, top_prop):
     # sort by breeding value (or others)
     # [0: ID, 1: family, 2: breeding value, 3: female or male]
     tmp_bv.sort(reverse=True, key=itemgetter(2))
-    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop)
+    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop, select_size)
     return f_val, m_val
 # within_family_selection
 
@@ -180,7 +180,7 @@ def family_mean_value(tmp_bv, fam_d, n_family):
 # family_mean_value
 
 
-def family_selection(par_inf, pro_inf, select_val, n_family):
+def family_selection(par_inf, pro_inf, select_val, n_family, select_size):
     '''
     Get index of progenies by family selection
 
@@ -208,12 +208,12 @@ def family_selection(par_inf, pro_inf, select_val, n_family):
     # mask unused families
     family_mean_value(tmp_bv, fam_d, n_family)
     # get index
-    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, 1.0)
+    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, 1.0, select_size)
     return f_val, m_val
 # family_selection
 
 
-def mass_selection(par_inf, pro_inf, select_val):
+def mass_selection(par_inf, pro_inf, select_val, select_size):
     '''
     Get index of progenies with the largest select values
 
@@ -228,8 +228,8 @@ def mass_selection(par_inf, pro_inf, select_val):
         - ndarray: index of females
         - ndarray: Index of males
     '''
-    f_val = np.argsort(select_val[:pro_inf.n_popf])[::-1][:par_inf.n_popf]
-    m_val = np.argsort(select_val[pro_inf.n_popf:])[::-1][:par_inf.n_popm]
+    f_val = np.argsort(select_val[:pro_inf.n_popf])[::-1][:select_size[0]]
+    m_val = np.argsort(select_val[pro_inf.n_popf:])[::-1][:select_size[1]]
     return f_val, m_val
 # mass_selection
 
@@ -314,7 +314,7 @@ def arrange_parents(n_mat, cross_inf, n_popf, n_popm):
 # arrange_parents
 
 
-def nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf):
+def nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf, select_size):
     '''
     Set next-generation parents as inbreeding is minimized
 
@@ -329,23 +329,35 @@ def nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf):
     # numerator relationship matrix of selected ones
     n_mat = bl.nrm_selected_ones(par_inf, pro_inf, f_val, m_val)
     # arrangement of femals and males in mating design
-    f_2, m_2 = arrange_parents(n_mat, cross_inf, par_inf.n_popf,
-                               par_inf.n_popm)
+    f_2, m_2 = arrange_parents(n_mat, cross_inf, select_size[0],
+                               select_size[1])
     # female
-    for i in range(par_inf.n_popf):
-        pro_i = f_val[f_2[i]]
+    if par_inf.n_popf > select_size[0]:
+        del par_inf.pop_f[select_size[0] - par_inf.n_popf:]
+    elif par_inf.n_popf < select_size[0]:
+        for _ in range(select_size[0] - par_inf.n_popf):
+            par_inf.pop_f.append(0)
+    for i, f_3 in enumerate(f_2):
+        pro_i = f_val[f_3]
         par_inf.pop_f[i] = deepcopy(pro_inf.pop_f[pro_i])
     # male
-    for i in range(par_inf.n_popm):
-        pro_i = m_val[m_2[i]]
+    if par_inf.n_popm > select_size[1]:
+        del par_inf.pop_m[select_size[1] - par_inf.n_popm:]
+    elif par_inf.n_popm < select_size[1]:
+        for _ in range(select_size[1] - par_inf.n_popm):
+            par_inf.pop_m.append(0)
+    for i, m_3 in enumerate(m_2):
+        pro_i = m_val[m_3]
         par_inf.pop_m[i] = deepcopy(pro_inf.pop_m[pro_i])
+    par_inf.n_popf = select_size[0]
+    par_inf.n_popm = select_size[1]
     # add new parents' ID
     par_inf.new_founder_id()
 # nextgen_parent
 
 
 def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
-                  top_prop, n_family):
+                  top_prop, n_family, select_size):
     '''
     Select parent
 
@@ -362,24 +374,28 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
         top_prop (float): Individual with top X% breeding values are used
                           in within-family selection
         n_family (int): Number of families to be selected in family selection
+        select_size (tuple): Numbers of selected founders, default: None
     '''
+    if select_size is None:
+        select_size = (par_inf.n_popf, par_inf.n_popm)
     # breeding value, phenotype, or random
     select_val = select_value(pro_inf, phe_inf, target)
     # get ID of large select values
     # mass selection
     if method == 'mass':
-        f_val, m_val = mass_selection(par_inf, pro_inf, select_val)
+        f_val, m_val = mass_selection(par_inf, pro_inf, select_val, select_size)
     # within-family selection
     elif method == 'within-family':
         f_val, m_val = within_family_selection(par_inf, pro_inf, select_val,
-                                               top_prop)
+                                               top_prop, select_size)
     # family selection
     elif method == 'family':
-        f_val, m_val = family_selection(par_inf, pro_inf, select_val, n_family)
+        f_val, m_val = family_selection(par_inf, pro_inf, select_val, n_family,
+                                        select_size)
     else:
         sys.exit('method should be \'mass\', or \'within-family\'')
     # mating design as inbreeding is minimized
-    nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf)
+    nextgen_parents(par_inf, pro_inf, f_val, m_val, cross_inf, select_size)
 # select_parent
 
 

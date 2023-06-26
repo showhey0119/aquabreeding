@@ -13,6 +13,7 @@ This is a beta version.  Please do not use it for any publications.
 
 ## Note
 - Aquabreeding does not yet support python3.11.  
+- numba 0.56.4 should be used.  
 
 
 ## Requirements

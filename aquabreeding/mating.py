@@ -8,7 +8,7 @@ import numpy as np
 from numba import jit
 
 
-def set_mating_design_partial(par_inf, cross_design):
+def set_mating_design_partial(select_size, cross_design):
     '''
     Cross design information for partial factorial cross
 
@@ -33,23 +33,23 @@ def set_mating_design_partial(par_inf, cross_design):
     if len(n_cross) != 1:
         sys.exit('cross_design should be \'1x[int]\'')
     n_cross = np.int(n_cross[0])
-    if n_cross == par_inf.n_popm:
+    if n_cross == select_size[0]:
         sys.exit('Use \'full\' for cross_design instead')
-    if n_cross > par_inf.n_popm:
+    if n_cross > select_size[0]:
         sys.exit('No. cross is too large')
     pair_i = np.empty((0, 4), dtype=np.int64)
-    for i in range(par_inf.n_popf):
+    for i in range(select_size[0]):
         for j in range(i, i+n_cross):
-            if j < par_inf.n_popf:
+            if j < select_size[0]:
                 j_2 = j
             else:
-                j_2 = j - par_inf.n_popf
+                j_2 = j - select_size[0]
             pair_i = np.append(pair_i, np.array([[i, j_2, 0, 0]]), axis=0)
     return pair_i
 # set_mating_design_partial
 
 
-def set_mating_design_full(par_inf):
+def set_mating_design_full(select_size):
     '''
     Cross design information for full factorial cross
 
@@ -70,14 +70,14 @@ def set_mating_design_full(par_inf):
         ndarray: female index, male index, 0, 0
     '''
     pair_i = np.empty((0, 4), dtype=np.int64)
-    for i in range(par_inf.n_popf):
-        for j in range(par_inf.n_popf):
+    for i in range(select_size[0]):
+        for j in range(select_size[1]):
             pair_i = np.append(pair_i, np.array([[i, j, 0, 0]]), axis=0)
     return pair_i
 # set_mating_design_full
 
 
-def set_mating_design(par_inf, cross_design):
+def set_mating_design(select_size, cross_design):
     '''
     Generate cross design information
 
@@ -89,9 +89,9 @@ def set_mating_design(par_inf, cross_design):
         ndarray: Female index, male index, 0, 0
     '''
     if re.compile(r'^1x\d+$').match(cross_design):
-        pair_i = set_mating_design_partial(par_inf, cross_design)
+        pair_i = set_mating_design_partial(select_size, cross_design)
     elif cross_design == 'full':
-        pair_i = set_mating_design_full(par_inf)
+        pair_i = set_mating_design_full(select_size)
     else:
         sys.exit('cross_design should be 1x(int), or full')
     return pair_i

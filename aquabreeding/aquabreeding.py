@@ -718,7 +718,7 @@ class AquaBreeding:
                                                   n_male)
     # snp_structured_pop
 
-    def mating_design(self, cross_design=None, custom_design=None):
+    def mating_design(self, cross_design=None, custom_design=None, select_size=None):
         '''
         Define mating design
 
@@ -739,12 +739,14 @@ class AquaBreeding:
             * cross_design works when nos. females and males are the same.
             * Evaluate cuastom_design first.  If None, evaluate cross_design.
         '''
+        if select_size is None:
+            select_size = (self.par_inf.n_popf, self.par_inf.n_popm)
         if custom_design is not None:
             self.cross_inf = custom_design
         elif cross_design is not None:
-            if self.par_inf.n_popm != self.par_inf.n_popf:
+            if select_size[0] != select_size[1]:
                 sys.exit('Nos. males and females shoule be the same')
-            self.cross_inf = mt.set_mating_design(self.par_inf, cross_design)
+            self.cross_inf = mt.set_mating_design(select_size, cross_design)
         else:
             sys.exit('Either cross_design or custom_design should be set')
     # mating_design
@@ -789,7 +791,7 @@ class AquaBreeding:
     # breeding_value
 
     def selection(self, target='bv', method='mass', top_prop=1.0,
-                  n_family=-1):
+                  n_family=-1, select_size=None):
         '''
         Select parents of next generation
 
@@ -804,9 +806,11 @@ class AquaBreeding:
                               in within-family selection. Set 0.0 < top_prop
                               <= 1.0.
             n_family (int): Number of families to be selected
+            select_size (tulple): Number of selected founders, default: None
         '''
         se.select_parent(self.par_inf, self.pro_inf, self.phe_inf,
-                         self.cross_inf, target, method, top_prop, n_family)
+                         self.cross_inf, target, method, top_prop, n_family,
+                         select_size)
     # selection
 
     def get_ibd(self):

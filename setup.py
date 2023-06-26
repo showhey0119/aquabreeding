@@ -138,7 +138,7 @@ setup(
         'numpy',
         'scipy',
         'msprime',
-        'numba',
+        'numba==0.56.4',
         'matplotlib',
         'seaborn',
         'pandas'
