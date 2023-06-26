@@ -335,7 +335,7 @@ class PopulationInfo:
             for _ in range(new_size[1] - self.n_popm):
                 self.pop_m.append(IndividualInfo(self.chrom, self.tmp_id))
         self.n_popf = new_size[0]
-        self.n_popf = new_size[1]
+        self.n_popm = new_size[1]
     # change_parent_num
 
     def init_founder(self):
