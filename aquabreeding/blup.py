@@ -274,9 +274,9 @@ def gblup(phe_inf, gblup_inf):
         gblup_inf (SNPInfo class): SNP information for GBLUP
     '''
     # calculate G matrix from genotype matrix
-    g_mat = convert_gmatrix(gblup_inf.gen_mat)
+    gblup_inf.g_mat = convert_gmatrix(gblup_inf.gen_mat)
     # estimate breeding value and variance component
-    bv_estimation(phe_inf, g_mat)
+    bv_estimation(phe_inf, gblup_inf.g_mat)
 # gblup
 
 

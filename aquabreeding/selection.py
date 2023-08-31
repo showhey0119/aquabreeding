@@ -399,6 +399,152 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
 # select_parent
 
 
+def gmat_selection(par_inf, pro_inf, select_val, select_size,
+                   rel_cut, g_mat):
+    '''
+    Get index of progenies by within-family selection
+
+    Args:
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
+        select_val (ndarray): Selection based on these values
+        top_prop (float): Select progenies with top X% of values
+
+    Returns:
+        Index of selected individuals
+
+        - ndarray: Index of females
+        - ndarray: Index of males
+    '''
+    fam_d = {}  # pair of mother and father
+    tmp_bv = []  # list of family, gender, and bv
+    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 0)  # for female
+    family_select_value(pro_inf, select_val, fam_d, tmp_bv, 1)  # for fale
+    # sort by breeding value (or others)
+    # [0: ID, 1: family, 2: breeding value, 3: female or male (0 or 1)]
+    tmp_bv.sort(reverse=True, key=itemgetter(2))
+    f_val, m_val = get_index_gmat(par_inf, pro_inf, tmp_bv, select_size,
+                                  rel_cut, g_mat)
+    return f_val, m_val
+# within_family_selection
+
+
+def get_index_gmat(par_inf, pro_inf, tmp_bv, select_size,
+                   rel_cut, g_mat):
+    '''
+    Get Index or selected progenies based on G matrix
+
+    Args:
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
+        tmp_bv (list): index, family, value, 0 (female) or 1 (male).
+                       Sorted by value.
+
+    Returns:
+        Index of selected individuals
+        - ndarray: Index of females
+        - ndarray: Index of males
+    '''
+    f_val = np.full(select_size[0], -7, dtype=np.int64)
+    m_val = np.full(select_size[1], -7, dtype=np.int64)
+    n_fval = n_mval = 0
+    n_bv = len(tmp_bv)
+    par_f = pro_inf.n_popf
+    for i in range(n_bv):
+        if tmp_bv[i] == -7:
+            continue
+        if tmp_bv[i][3] == 0:  # female
+            if n_fval == select_size[0]:
+                continue
+            f_val[n_fval] = tmp_bv[i][0]
+            n_fval += 1
+            i_1 = tmp_bv[i][0]
+        else:  # male
+            if n_mval == select_size[1]:
+                continue
+            m_val[n_mval] = tmp_bv[i][0]
+            n_mval += 1
+            i_1 = tmp_bv[i][0] + par_f
+        tmp_bv[i][0] = -7
+        # check G matrix
+        for j in range(i+1, n_bv):
+            if tmp_bv[j][3] == 0:
+                i_2 = tmp_bv[j][0]
+            else:
+                i_2 = tmp_bv[j][0] + par_f
+            if g_mat[i_1][i_2] >= rel_cut:
+                tmp_bv[j][0] = -7
+    if n_fval != select_size[0] or n_mval != select_size[1]:
+        sys.exit(f'Not enough {select_size}, {n_fval} {n_mval}, {rel_cut:.1f}')
+    return f_val, m_val
+# get_index_gmat
+
+
+def nextgen_gmat(par_inf, pro_inf, f_val, m_val, cross_inf, select_size):
+    '''
+    Set next-generation parents as inbreeding is minimized
+
+    Args:
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
+        f_val (ndarray): Index of selected females
+        m_val (ndarray): Index of selected males
+        cross_inf (ndarray): Female index, male index, no. female
+                             progeny, no. male progeny
+    '''
+    # female
+    if par_inf.n_popf > select_size[0]:
+        del par_inf.pop_f[select_size[0] - par_inf.n_popf:]
+    elif par_inf.n_popf < select_size[0]:
+        for _ in range(select_size[0] - par_inf.n_popf):
+            par_inf.pop_f.append(0)
+    for i, f_3 in enumerate(f_val):
+        par_inf.pop_f[i] = deepcopy(pro_inf.pop_f[f_3])
+    # male
+    if par_inf.n_popm > select_size[1]:
+        del par_inf.pop_m[select_size[1] - par_inf.n_popm:]
+    elif par_inf.n_popm < select_size[1]:
+        for _ in range(select_size[1] - par_inf.n_popm):
+            par_inf.pop_m.append(0)
+    for i, m_3 in enumerate(m_val):
+        par_inf.pop_m[i] = deepcopy(pro_inf.pop_m[m_3])
+    par_inf.n_popf = select_size[0]
+    par_inf.n_popm = select_size[1]
+    # add new parents' ID
+    par_inf.new_founder_id()
+# nextgen_parent
+
+
+def select_gmat(par_inf, pro_inf, phe_inf, cross_inf, target,
+                select_size, rel_cut, g_mat):
+    '''
+    Select parents based on G matrix
+
+    Args:
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
+        phe_inf (PhenotypeInfo class): Phenotype information
+        cross_inf (ndarray): Female index, male index, no. female progeny,
+                             no. male progeny
+        target (str): 'bv' (breeding value), 'phenotype' (phenotype), or
+                       'random' (random) selection
+        select_size (tuple): Numbers of selected founders, default: None
+        rel_cut (float): cutoff of F
+        g_mat (ndarray): G matrix
+    '''
+    if select_size is None:
+        select_size = (par_inf.n_popf, par_inf.n_popm)
+    # breeding value, phenotype, or random
+    select_val = select_value(pro_inf, phe_inf, target)
+    # get ID of large select values
+    f_val, m_val = gmat_selection(par_inf, pro_inf, select_val,
+                                 select_size, rel_cut, g_mat)
+    # mating design as inbreeding is minimized
+    nextgen_gmat(par_inf, pro_inf, f_val, m_val, cross_inf, select_size)
+# select_parent
+
+
+
 def main():
     '''
     main

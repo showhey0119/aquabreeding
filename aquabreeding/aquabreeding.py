@@ -637,6 +637,8 @@ class AquaBreeding:
         self.phe_inf = PhenotypeInfo(mean_phenotype, residual_var)
         # mating info
         self.cross_inf = []
+        # G matrix
+        self.g_mat = []
         # SNP for GBLUP
         if gblup is not None:
             self.gblup_inf = SNPInfo(gblup, -1, founder_size, progeny_size,
@@ -791,7 +793,7 @@ class AquaBreeding:
     # breeding_value
 
     def selection(self, target='bv', method='mass', top_prop=1.0,
-                  n_family=-1, select_size=None):
+                  n_family=-1, select_size=None, rel_cut=None):
         '''
         Select parents of next generation
 
@@ -808,7 +810,14 @@ class AquaBreeding:
             n_family (int): Number of families to be selected
             select_size (tulple): Number of selected founders, default: None
         '''
-        se.select_parent(self.par_inf, self.pro_inf, self.phe_inf,
+        if method == 'gmat':
+            if rel_cut is None:
+                sys.exit(f'Specify rel_cut')
+            se.select_gmat(self.par_inf, self.pro_inf, self.phe_inf,
+                           self.cross_inf, target, select_size, rel_cut,
+                           self.gblup_inf.g_mat)
+        else:
+            se.select_parent(self.par_inf, self.pro_inf, self.phe_inf,
                          self.cross_inf, target, method, top_prop, n_family,
                          select_size)
     # selection
