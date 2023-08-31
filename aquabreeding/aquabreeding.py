@@ -315,29 +315,6 @@ class PopulationInfo:
         self.d_par = {}
     # __init__
 
-    def change_parent_num(self, new_size):
-        '''
-        Change founder size
-
-        Args:
-            new_size (tuple): new founder size
-        '''
-        # change female founder
-        if self.n_popf > new_size[0]:
-            del self.pop_f[new_size[0] - self.n_popf:]
-        elif self.n_popf < new_size[0]:
-            for _ in range(new_size[0] - self.n_popf):
-                self.pop_f.append(IndividualInfo(self.chrom, self.tmp_id))
-        # change male founder
-        if self.n_popm > new_size[1]:
-            del self.pop_m[new_size[1] - self.n_popm:]
-        elif self.n_popm < new_size[1]:
-            for _ in range(new_size[1] - self.n_popm):
-                self.pop_m.append(IndividualInfo(self.chrom, self.tmp_id))
-        self.n_popf = new_size[0]
-        self.n_popm = new_size[1]
-    # change_parent_num
-
     def init_founder(self):
         '''
         Initiate founder/parental population
