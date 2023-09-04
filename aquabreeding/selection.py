@@ -451,7 +451,7 @@ def get_index_gmat(par_inf, pro_inf, tmp_bv, select_size,
     n_bv = len(tmp_bv)
     par_f = pro_inf.n_popf
     for i in range(n_bv):
-        if tmp_bv[i] == -7:
+        if tmp_bv[i][0] == -7:
             continue
         if tmp_bv[i][3] == 0:  # female
             if n_fval == select_size[0]:
