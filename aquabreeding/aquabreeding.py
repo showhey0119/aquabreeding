@@ -302,7 +302,7 @@ class PopulationInfo:
         tmp_id (int): ID of all parents (only used for a founder)
         d_par (dict): Dict of parents of founders (only used for a founder)
     '''
-    def __init__(self, pop_size, chrom):
+    def __init__(self, pop_size, chrom, n_nat=None):
         '''
         Constructur
         '''
@@ -313,6 +313,9 @@ class PopulationInfo:
         self.pop_m = []
         self.tmp_id = 0
         self.d_par = {}
+        self.n_nat = n_nat
+        self.pop_n = []
+        self.count_nat = 0
     # __init__
 
     def init_founder(self):
@@ -333,6 +336,14 @@ class PopulationInfo:
             self.d_par[self.tmp_id]['mat'] = -1
             self.d_par[self.tmp_id]['pat'] = -1
             self.tmp_id += 1
+        # extral natural individuals
+        if self.n_nat is not None:
+            for _ in range(self.n_nat):
+                self.pop_n.append(IndividualInfo(self.chrom, self.tmp_id))
+                self.d_par[self.tmp_id] = {}
+                self.d_par[self.tmp_id]['mat'] = -1
+                self.d_par[self.tmp_id]['pat'] = -1
+                self.tmp_id += 1
     # init_founder
 
     def new_founder_id(self):
@@ -410,12 +421,14 @@ class SNPInfo:
         snp_dict (dict): Chromosome and position of SNPs
     '''
     def __init__(self, n_snp, effect_var, founder_size, progeny_size,
-                 chrom):
+                 chrom, n_nat=None):
         '''
         Constructor
         '''
         self.n_snp = n_snp
         self.n_founder = founder_size[0] + founder_size[1]
+        if n_nat is not None:
+            self.n_founder += n_nat
         self.par_snp = []
         pro_row = progeny_size[0] + progeny_size[1]
         self.gen_mat = np.full((pro_row, n_snp), -7, dtype=np.float64)
@@ -579,6 +592,7 @@ class AquaBreeding:
         residual_var (float): Redisual variance
         gblup (int): No. SNPs for GBLUP with no effect on phenotype,
                      default None
+        n_nat (int): No. individuals in a extra natural population, default None
 
     Attributes:
         chrom (tuple): Chrom num, chrom len (bp), female cM/Mb, male cM/Mb
@@ -591,7 +605,7 @@ class AquaBreeding:
         gblup_inf (SNPInfo class): SNP information for GBLUP
     '''
     def __init__(self, founder_size, progeny_size, chrom, n_snp, effect_var,
-                 mean_phenotype, residual_var, gblup=None):
+                 mean_phenotype, residual_var, gblup=None, n_nat=None):
         '''
         constructor
         '''
@@ -602,14 +616,14 @@ class AquaBreeding:
         # chromosome info
         self.chrom = chrom
         # parental population
-        self.par_inf = PopulationInfo(founder_size, self.chrom)
+        self.par_inf = PopulationInfo(founder_size, self.chrom, n_nat)
         self.par_inf.init_founder()
         # progeny population
         self.pro_inf = PopulationInfo(progeny_size, self.chrom)
         self.pro_inf.init_progeny()
         # SNP info
         self.snp_inf = SNPInfo(n_snp, effect_var, founder_size, progeny_size,
-                               self.chrom)
+                               self.chrom, n_nat)
         # Phenotype info
         self.phe_inf = PhenotypeInfo(mean_phenotype, residual_var)
         # mating info
@@ -619,7 +633,7 @@ class AquaBreeding:
         # SNP for GBLUP
         if gblup is not None:
             self.gblup_inf = SNPInfo(gblup, -1, founder_size, progeny_size,
-                                     self.chrom)
+                                     self.chrom, n_nat)
         else:
             self.gblup_inf = None
     # __init__
@@ -857,6 +871,17 @@ class AquaBreeding:
         '''
         return (self.phe_inf.hat_vg, self.phe_inf.hat_ve)
     # variance_component
+
+    def use_natural(self, gender, num):
+        '''
+        Incorporate natural individuals before mating
+
+        Args:
+            gender (str): 'female' or 'male'
+            num (int): The number of natural individuals
+        '''
+        mt.use_natural_parent(self.par_inf, gender, num)
+    # use natural
 # class AquaBreeding
 
 
