@@ -447,6 +447,8 @@ class SNPInfo:
             self.snp_dict[i] = {}
             self.snp_dict[i]['chrom'] = rand_c[i]
             self.snp_dict[i]['pos'] = rand_p[i]
+        # G matrix for GBLUP
+        self.g_mat = []
     # __init__
 
     def msprime_standard(self):
@@ -592,7 +594,8 @@ class AquaBreeding:
         residual_var (float): Redisual variance
         gblup (int): No. SNPs for GBLUP with no effect on phenotype,
                      default None
-        n_nat (int): No. individuals in a extra natural population, default None
+        n_nat (int): No. individuals in a extra natural population,
+                     default None
 
     Attributes:
         chrom (tuple): Chrom num, chrom len (bp), female cM/Mb, male cM/Mb
@@ -628,8 +631,6 @@ class AquaBreeding:
         self.phe_inf = PhenotypeInfo(mean_phenotype, residual_var)
         # mating info
         self.cross_inf = []
-        # G matrix
-        self.g_mat = []
         # SNP for GBLUP
         if gblup is not None:
             self.gblup_inf = SNPInfo(gblup, -1, founder_size, progeny_size,
@@ -637,18 +638,6 @@ class AquaBreeding:
         else:
             self.gblup_inf = None
     # __init__
-
-    def change_parnum(self, new_size):
-        '''
-        Change the number of parents
-
-        Note: This method should be called before self.selection
-        
-        Args:
-            new_size (tuple): The new numbers of founders
-        '''
-        self.par_inf.change_parent_num(new_size)
-    # change_parnum
 
     def print_pop(self, target='founder', n_show=10):
         '''
@@ -711,7 +700,8 @@ class AquaBreeding:
                                                   n_male)
     # snp_structured_pop
 
-    def mating_design(self, cross_design=None, custom_design=None, select_size=None):
+    def mating_design(self, cross_design=None, custom_design=None,
+                      select_size=None):
         '''
         Define mating design
 
@@ -803,14 +793,14 @@ class AquaBreeding:
         '''
         if method == 'gmat':
             if rel_cut is None:
-                sys.exit(f'Specify rel_cut')
+                sys.exit('Specify rel_cut')
             se.select_gmat(self.par_inf, self.pro_inf, self.phe_inf,
-                           self.cross_inf, target, select_size, rel_cut,
+                           target, select_size, rel_cut,
                            self.gblup_inf.g_mat)
         else:
             se.select_parent(self.par_inf, self.pro_inf, self.phe_inf,
-                         self.cross_inf, target, method, top_prop, n_family,
-                         select_size)
+                             self.cross_inf, target, method, top_prop,
+                             n_family, select_size)
     # selection
 
     def get_ibd(self):

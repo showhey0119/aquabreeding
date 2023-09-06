@@ -117,7 +117,8 @@ def get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop, select_size):
 # get_index
 
 
-def within_family_selection(par_inf, pro_inf, select_val, top_prop, select_size):
+def within_family_selection(par_inf, pro_inf, select_val, top_prop,
+                            select_size):
     '''
     Get index of progenies by within-family selection
 
@@ -140,7 +141,8 @@ def within_family_selection(par_inf, pro_inf, select_val, top_prop, select_size)
     # sort by breeding value (or others)
     # [0: ID, 1: family, 2: breeding value, 3: female or male]
     tmp_bv.sort(reverse=True, key=itemgetter(2))
-    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop, select_size)
+    f_val, m_val = get_index(par_inf, pro_inf, tmp_bv, fam_d, top_prop,
+                             select_size)
     return f_val, m_val
 # within_family_selection
 
@@ -383,7 +385,8 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
     # get ID of large select values
     # mass selection
     if method == 'mass':
-        f_val, m_val = mass_selection(par_inf, pro_inf, select_val, select_size)
+        f_val, m_val = mass_selection(par_inf, pro_inf, select_val,
+                                      select_size)
     # within-family selection
     elif method == 'within-family':
         f_val, m_val = within_family_selection(par_inf, pro_inf, select_val,
@@ -399,8 +402,8 @@ def select_parent(par_inf, pro_inf, phe_inf, cross_inf, target, method,
 # select_parent
 
 
-def gmat_selection(par_inf, pro_inf, select_val, select_size,
-                   rel_cut, g_mat):
+def gmat_selection(pro_inf, select_val, select_size, rel_cut,
+                   g_mat):
     '''
     Get index of progenies by within-family selection
 
@@ -423,14 +426,14 @@ def gmat_selection(par_inf, pro_inf, select_val, select_size,
     # sort by breeding value (or others)
     # [0: ID, 1: family, 2: breeding value, 3: female or male (0 or 1)]
     tmp_bv.sort(reverse=True, key=itemgetter(2))
-    f_val, m_val = get_index_gmat(par_inf, pro_inf, tmp_bv, select_size,
-                                  rel_cut, g_mat)
+    f_val, m_val = get_index_gmat(pro_inf, tmp_bv, select_size, rel_cut,
+                                  g_mat)
     return f_val, m_val
 # within_family_selection
 
 
-def get_index_gmat(par_inf, pro_inf, tmp_bv, select_size,
-                   rel_cut, g_mat):
+def get_index_gmat(pro_inf, tmp_bv, select_size, rel_cut,
+                   g_mat):
     '''
     Get Index or selected progenies based on G matrix
 
@@ -480,7 +483,7 @@ def get_index_gmat(par_inf, pro_inf, tmp_bv, select_size,
 # get_index_gmat
 
 
-def nextgen_gmat(par_inf, pro_inf, f_val, m_val, cross_inf, select_size):
+def nextgen_gmat(par_inf, pro_inf, f_val, m_val, select_size):
     '''
     Set next-generation parents as inbreeding is minimized
 
@@ -515,8 +518,8 @@ def nextgen_gmat(par_inf, pro_inf, f_val, m_val, cross_inf, select_size):
 # nextgen_parent
 
 
-def select_gmat(par_inf, pro_inf, phe_inf, cross_inf, target,
-                select_size, rel_cut, g_mat):
+def select_gmat(par_inf, pro_inf, phe_inf, target, select_size, rel_cut,
+                g_mat):
     '''
     Select parents based on G matrix
 
@@ -537,12 +540,11 @@ def select_gmat(par_inf, pro_inf, phe_inf, cross_inf, target,
     # breeding value, phenotype, or random
     select_val = select_value(pro_inf, phe_inf, target)
     # get ID of large select values
-    f_val, m_val = gmat_selection(par_inf, pro_inf, select_val,
-                                 select_size, rel_cut, g_mat)
+    f_val, m_val = gmat_selection(pro_inf, select_val, select_size,
+                                  rel_cut, g_mat)
     # mating design as inbreeding is minimized
-    nextgen_gmat(par_inf, pro_inf, f_val, m_val, cross_inf, select_size)
+    nextgen_gmat(par_inf, pro_inf, f_val, m_val, select_size)
 # select_parent
-
 
 
 def main():

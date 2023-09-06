@@ -36,6 +36,7 @@ def use_natural_parent(par_inf, gender, num):
         par_inf.count_nat += 1
 # use_natural_parent
 
+
 def set_mating_design_partial(select_size, cross_design):
     '''
     Cross design information for partial factorial cross
