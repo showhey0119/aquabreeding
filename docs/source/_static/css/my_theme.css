@@ -1,0 +1,24 @@
+@import url("theme.css");
+ 
+.wy-nav-content {
+    max-width: none;
+}
+
+h1,h2,h3,h4,h5,h6 {
+    border-bottom: 1px solid #ccc;
+}
+
+h6{
+    color: #364e96;/*文字色*/
+    padding: 0.5em 0;/*上下の余白*/
+    border-top: solid 3px #364e96;/*上線*/
+    border-bottom: solid 3px #364e96;/*下線*/
+}
+
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
+
+colgroup {
+    display: none;
+}
