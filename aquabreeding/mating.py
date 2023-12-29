@@ -7,7 +7,7 @@ import sys
 from random import sample
 from copy import deepcopy
 import numpy as np
-from numba import jit
+from aquabreeding import gametogenesis as gg
 
 
 def use_natural_parent(par_inf, gender, num):
@@ -37,7 +37,7 @@ def use_natural_parent(par_inf, gender, num):
 # use_natural_parent
 
 
-def set_mating_design_partial(select_size, cross_design):
+def set_mating_design_partial(select_size, design):
     '''
     Cross design information for partial factorial cross
 
@@ -53,28 +53,29 @@ def set_mating_design_partial(select_size, cross_design):
                 4         x    4 x       x    4 x x     x
 
     Args:
-        par_inf (PopulationInfo class): Founder population
+        select_size (tuple): Nos. female and male parents
+        design (str): 1x(int)
 
     Returns:
-        ndarray: female index, male index, 0, 0
+        numpy.ndarray: Index pairs of female and male parents
     '''
-    n_cross = re.findall(r'^1x(\d+)$', cross_design)
+    n_cross = re.findall(r'^1x(\d+)$', design)
     if len(n_cross) != 1:
         sys.exit('cross_design should be \'1x[int]\'')
-    n_cross = np.int(n_cross[0])
+    n_cross = int(n_cross[0])
     if n_cross == select_size[0]:
-        sys.exit('Use \'full\' for cross_design instead')
+        sys.exit('Use \'full\' for design instead')
     if n_cross > select_size[0]:
         sys.exit('No. cross is too large')
-    pair_i = np.empty((0, 4), dtype=np.int64)
+    pair_i = np.empty((0, 2), dtype=np.int32)
     for i in range(select_size[0]):
         for j in range(i, i+n_cross):
             if j < select_size[0]:
                 j_2 = j
             else:
                 j_2 = j - select_size[0]
-            pair_i = np.append(pair_i, np.array([[i, j_2, 0, 0]]), axis=0)
-    return pair_i
+            pair_i = np.append(pair_i, np.array([[i, j_2]]), axis=0)
+    return pair_i.astype(np.int32)
 # set_mating_design_partial
 
 
@@ -93,20 +94,20 @@ def set_mating_design_full(select_size):
                4 x x x x x
 
     Args:
-        par_inf (PopulationInfo class): Founder population
+        select_size (tuple): Nos. female and male parents
 
     Returns:
-        ndarray: female index, male index, 0, 0
+        numpy.ndarray: index pairs of female and male parents
     '''
-    pair_i = np.empty((0, 4), dtype=np.int64)
+    pair_i = np.empty((0, 2), dtype=np.int32)
     for i in range(select_size[0]):
         for j in range(select_size[1]):
-            pair_i = np.append(pair_i, np.array([[i, j, 0, 0]]), axis=0)
-    return pair_i
+            pair_i = np.append(pair_i, np.array([[i, j]]), axis=0)
+    return pair_i.astype(np.int32)
 # set_mating_design_full
 
 
-def set_mating_design(select_size, cross_design):
+def set_mating_design(design, select_size):
     '''
     Generate cross design information
 
@@ -115,81 +116,49 @@ def set_mating_design(select_size, cross_design):
         cross_design (str): '1x(int)' partial or 'full' factorial mating
 
     Returns:
-        ndarray: Female index, male index, 0, 0
+        numpy.ndarray: Female index, male index
     '''
-    if re.compile(r'^1x\d+$').match(cross_design):
-        pair_i = set_mating_design_partial(select_size, cross_design)
-    elif cross_design == 'full':
-        pair_i = set_mating_design_full(select_size)
-    else:
-        sys.exit('cross_design should be 1x(int), or full')
-    return pair_i
-# mate_design
+    if isinstance(design, str):
+        if re.compile(r'^1x\d+$').match(design):
+            return set_mating_design_partial(select_size, design)
+        if design == 'full':
+            return set_mating_design_full(select_size)
+    if isinstance(design, np.ndarray):
+        c_design = np.shape(design)[1]
+        if c_design != 2:
+            sys.exit('No. columns of mating design should be 2')
+        return design.astype(np.int32)
+    sys.exit('design should be 1x(int), full, or numpy.ndarray')
+# set_mating_design
 
 
-@jit(cache=True)
-def random_allocation(cross_inf, n_total, tag):
-    '''
-    Randomly allocate the numbers of progenies in each cross
-
-    Args:
-        cross_inf (ndarray): Female index, male index,
-                             no. female progeny, no. male progeny
-        n_total (int): No. male/female progenies
-        tag (int): Where female/male progeny num is stored in cross_inf.
-                   2 for female, 3 for male.
-    '''
-    n_cross = cross_inf.shape[0]
-    freq_std = 1.0  # normalized total freq
-    ex_p = 1.0/n_cross  # expected frequency
-    for i in range(n_cross):
-        binom_p = ex_p/freq_std  # binomial p is normalized
-        binom_p = min(binom_p, 1.0)  # avoid 1.00000000001
-        cross_inf[i][tag] = np.random.binomial(n_total, binom_p)
-        freq_std -= ex_p
-        n_total -= cross_inf[i][tag]
-# random_allocation
-
-
-def produce_progeny_female_male(cross_inf, par_inf, pro_ls,
-                                n_pro, tag):
+def mating_process(cross_inf, par_inf, pro_ls, n_pro):
     '''
     Produce female/male progenies
 
     Args:
-        cross_inf (ndarray): Female index, male index,
-                             no. female progeny, no. male progeny
+        cross_inf (numpy.ndarray): Index pairs of female and male parents
         par_inf (PopulationInfo class): Founder population
         pro_ls (list): List of IndividualInfo class of female/male
         n_pro (int): Length of pro_ls
-        tag (int): Where female/male progeny num is stored in cross_inf.
-                   2 for female, 3 for male
     '''
+    n_cross = np.shape(cross_inf)[0]
+    # No. progenies in each cross
+    family_size = np.random.multinomial(n_pro, [1.0/n_cross]*n_cross)
     # index for progeny
     i_pro = 0
     # for parental female index, male index, no. progeny
-    for i, j, p_size in zip(cross_inf[:, 0], cross_inf[:, 1],
-                            cross_inf[:, tag]):
+    for i, j, p_size in zip(cross_inf[:, 0], cross_inf[:, 1], family_size):
         for _ in range(p_size):
-            # for each chromosome
-            for c_id in range(par_inf.chrom[0]):
-                # female
-                gamete_1, geno_1 = par_inf.pop_f[i].gamete(c_id, 0)
-                # male
-                gamete_2, geno_2 = par_inf.pop_m[j].gamete(c_id, 1)
-                # copy gamete
-                pro_ls[i_pro].copy_gametes(gamete_1, gamete_2, geno_1, geno_2,
-                                           c_id)
-            # parents' ID
-            pro_ls[i_pro].mat_id = par_inf.pop_f[i].ind_id
-            pro_ls[i_pro].pat_id = par_inf.pop_m[j].ind_id
+            gg.produce_progeny(par_inf.pop_f[i], par_inf.pop_m[j],
+                               pro_ls[i_pro])
             i_pro += 1
     if i_pro != n_pro:
         sys.exit('something wrong in produce_progeny_female_male')
-# produce_progeny_female_male
+# maiting_process
 
 
-def produce_progeny(cross_inf, par_inf, pro_inf, r_a):
+def start_mating(cross_inf, par_inf, pro_inf):
     '''
     Produce progenies by crossing founder/parental individuals
 
@@ -204,18 +173,11 @@ def produce_progeny(cross_inf, par_inf, pro_inf, r_a):
         The numbers of female/male progenies are stored in
         2nd and 3rd colums in cross_inf, respectively.
     '''
-    if r_a:
-        # simulate number of progenies in each cross for female
-        random_allocation(cross_inf, pro_inf.n_popf, 2)
-        # for male
-        random_allocation(cross_inf, pro_inf.n_popm, 3)
     # produce female progeny
-    produce_progeny_female_male(cross_inf, par_inf, pro_inf.pop_f,
-                                pro_inf.n_popf, 2)
+    mating_process(cross_inf, par_inf, pro_inf.pop_f, pro_inf.n_f)
     # produce male progeny
-    produce_progeny_female_male(cross_inf, par_inf, pro_inf.pop_m,
-                                pro_inf.n_popm, 3)
-# produce_progeny
+    mating_process(cross_inf, par_inf, pro_inf.pop_m, pro_inf.n_m)
+# start_mating
 
 
 def main():

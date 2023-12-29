@@ -1,26 +1,23 @@
 '''
-Module for BLUP
+A module for BLUP
 '''
 
 import sys
 from scipy.optimize import minimize_scalar
 import numpy as np
-from numba import jit
-from aquabreeding import _nrm as nrm
+from aquabreeding import aquacpp as cpp
 
 
-def nrm_cpp(par_dict, progeny_pop, founder_size):
+def nrm_cpp(par_inf, pro_inf, founder_size):
     '''
     Calculate numerator relationship matrix with C++
 
     Args:
-        par_dict (dict): Dictionary of parents in founders
-        progeny_pop (PopulationInfo class): Progeny population
+        par_inf (PopulationInfo class): Founder population
+        pro_inf (PopulationInfo class): Progeny population
         founder_size (int): Founder population size
-
-    Returns:
-        (ndarray: Numerator relationship matrix
     '''
+    par_dict = par_inf.d_par
     par_key = list(par_dict.keys())
     par_key.sort()
     n_par = len(par_key)
@@ -29,14 +26,20 @@ def nrm_cpp(par_dict, progeny_pop, founder_size):
     for i in range(n_par):
         dict_s.append(par_dict[i]['pat'])
         dict_d.append(par_dict[i]['mat'])
-    progeny_size = len(progeny_pop)
-    for i in range(progeny_size):
-        dict_s.append(progeny_pop[i].pat_id)
-        dict_d.append(progeny_pop[i].mat_id)
-    n_mat = np.identity(n_par+progeny_size)
-    nrm.nrm(n_mat, founder_size, n_par+progeny_size, dict_s, dict_d)
-    return n_mat[n_par:, n_par:]
-# nrm
+    # female
+    for individual in pro_inf.pop_f:
+        dict_s.append(individual.pat_id)
+        dict_d.append(individual.mat_id)
+    # male
+    for individual in pro_inf.pop_m:
+        dict_s.append(individual.pat_id)
+        dict_d.append(individual.mat_id)
+    n_founder = founder_size[0] + founder_size[1]
+    n_progeny = pro_inf.n_f + pro_inf.n_m
+    n_mat = np.identity(n_par + n_progeny, dtype=np.float64)
+    cpp.nrm(n_mat, n_founder, n_par + n_progeny, dict_s, dict_d)
+    pro_inf.a_mat = n_mat[n_par:, n_par:]
+# nrm_cpp
 
 
 def bv_estimation(phe_inf, g_mat):
@@ -108,147 +111,18 @@ def bv_estimation(phe_inf, g_mat):
 # gebv_calculation
 
 
-@jit(cache=True)
-def nrm_jit2(n_mat, j_stt, j_max, vec_s, vec_d):
-    '''
-    Calculating numerator relationship matrix with numba jit
-
-    Args:
-        n_mat (ndarray): Numerator relationship matrix
-        j_stt (int): Founder size
-        j_max (int): The total number of founder+progeny
-        vec_s (ndarray): Father (sire) ID
-        vec_d (ndarray): Mother (dam) ID
-    '''
-    for j in range(j_stt, j_max):
-        pars = vec_s[j]
-        pard = vec_d[j]
-        for i in range(j):
-            ais = 0.0
-            aid = 0.0
-            if pars != -1:
-                ais = n_mat[i][pars]
-            if pard != -1:
-                aid = n_mat[i][pard]
-            n_mat[i][j] = 0.5*(ais+aid)
-            n_mat[j][i] = n_mat[i][j]
-        if pars != -1 and pard != -1:
-            n_mat[j][j] = 1.0 + 0.5 * n_mat[pars][pard]
-        else:
-            n_mat[j][j] = 1.0
-# nrm_jit2
-
-
-def nrm_jit(par_inf, pro_inf):
-    '''
-    Calculate numerator relationship matrix
-
-    Args:
-        par_inf (PopulationInfo class): Founder population
-        pro_inf (PopulationInfo class): Progeny population
-
-    Returns:
-        ndarray: Numerator relationship matrix
-    '''
-    # parents of the founder population
-    par_key = list(par_inf.d_par.keys())
-    par_key.sort()
-    n_founder = par_inf.n_popf + par_inf.n_popm
-    # num of parents throughout all generations
-    n_par = len(par_key)
-    # list of father and mother
-    dict_s = []
-    dict_d = []
-    for i in range(n_par):
-        dict_s.append(par_inf.d_par[i]['pat'])
-        dict_d.append(par_inf.d_par[i]['mat'])
-    # parents of the progeny population
-    n_progeny = pro_inf.n_popf + pro_inf.n_popm
-    for i in range(pro_inf.n_popf):
-        dict_s.append(pro_inf.pop_f[i].pat_id)
-        dict_d.append(pro_inf.pop_f[i].mat_id)
-    for i in range(pro_inf.n_popm):
-        dict_s.append(pro_inf.pop_m[i].pat_id)
-        dict_d.append(pro_inf.pop_m[i].mat_id)
-    dict_s = np.array(dict_s, dtype=np.int64)
-    dict_d = np.array(dict_d, dtype=np.int64)
-    # calculate numerator relationship matrix
-    n_mat = np.identity(n_par+n_progeny, dtype=np.float64)
-    nrm_jit2(n_mat, n_founder, n_par+n_progeny, dict_s, dict_d)
-    return n_mat[n_par:, n_par:]
-# nrm_jit
-
-
-def nrm_selected_ones(par_inf, pro_inf, f_val, m_val):
-    '''
-    Calculate numerator relationship matrix of selected ones
-
-    Args:
-        par_inf (PopulationInfo class): Founder population
-        pro_inf (PopulationInfo class): Progeny population
-        f_val (ndarray): Female index of selected progenies
-        m_val (ndarray): Male index of selected progenies
-
-    Returns:
-        ndarray: Numerator relationship matrix
-    '''
-    # parents of the founder population
-    par_key = list(par_inf.d_par.keys())
-    par_key.sort()
-    n_founder = par_inf.n_popf + par_inf.n_popm
-    # num of parents throughout all generations
-    n_par = len(par_key)
-    # list of father and mother
-    dict_s = []
-    dict_d = []
-    for i in range(n_par):
-        dict_s.append(par_inf.d_par[i]['pat'])
-        dict_d.append(par_inf.d_par[i]['mat'])
-    # parents of selected progeny
-    n_progeny = f_val.shape[0] + m_val.shape[0]
-    for i in f_val:
-        dict_s.append(pro_inf.pop_f[i].pat_id)
-        dict_d.append(pro_inf.pop_f[i].mat_id)
-    for i in m_val:
-        dict_s.append(pro_inf.pop_m[i].pat_id)
-        dict_d.append(pro_inf.pop_m[i].mat_id)
-    dict_s = np.array(dict_s)
-    dict_d = np.array(dict_d)
-    # calculate numerator relationship matrix
-    n_mat = np.identity(n_par+n_progeny)
-    nrm_jit2(n_mat, n_founder, n_par+n_progeny, dict_s, dict_d)
-    return n_mat[n_par:, n_par:]
-# nrm_selected_ones
-
-
-def ablup(phe_inf, par_inf, pro_inf):
-    '''
-    BLUP with numerator relationship matrix (ABLUP)
-
-    Args:
-        phe_inf (PhenotypeInfo class): Phenotype information
-        par_inf (PopulationInfo class): Founder poplation
-        pro_inf (PopulationInfo class): Progeny population
-    '''
-    # numerator relationship matrix
-    a_mat = nrm_jit(par_inf, pro_inf)
-    # estimate breeding value and variance component
-    bv_estimation(phe_inf, a_mat)
-# ablup
-
-
-@jit(cache=True)
-def convert_gmatrix(gen_array):
+def convert_gmatrix(pro_inf, gen_array):
     '''
     Convert genotype matrix into G matrix for GBLUP
 
     Args:
+        pro_inf (PopulationInfo class): Progeny population
         gen_array (ndarray): Genotype matrix
 
     Returns:
         ndarray: G matrix
     '''
-    n_rows, n_cols = gen_array.shape
+    n_cols = gen_array.shape[1]
     # allele frequency
     freq_q = np.ones(n_cols)
     for i in range(n_cols):
@@ -261,30 +135,15 @@ def convert_gmatrix(gen_array):
     w_mat = gen_array[:, poly_snp] - 2.0 * freq_q
     n_poly = len(freq_q)
     g_mat = w_mat @ w_mat.T / var_a / n_poly
-    return g_mat
+    pro_inf.g_mat = g_mat
 # convert_gmatrix
-
-
-def gblup(phe_inf, gblup_inf):
-    '''
-    BLUP with genomic relationship matrix (GBLUP)
-
-    Args:
-        phe_inf (PhenotypeInfo class): Phenotype information
-        gblup_inf (SNPInfo class): SNP information for GBLUP
-    '''
-    # calculate G matrix from genotype matrix
-    gblup_inf.g_mat = convert_gmatrix(gblup_inf.gen_mat)
-    # estimate breeding value and variance component
-    bv_estimation(phe_inf, gblup_inf.g_mat)
-# gblup
 
 
 def main():
     '''
     main
     '''
-    print('Module for BLUP')
+    print('A module for BLUP')
 # main
 
 

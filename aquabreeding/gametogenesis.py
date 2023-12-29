@@ -1,78 +1,16 @@
 '''
-Module for simulating gametogenesis
+A module for simulating gametogenesis
+
+Notes:
+    SNP position starts with zero
 '''
 
 import sys
-from bisect import bisect_left
 import numpy as np
+from aquabreeding import aquacpp as cpp
 
 
-def add_break_point(break_point, chrom_x, geno_x):
-    '''
-    Add recombination break point at the list of a chromatid
-
-    Args:
-        break_point (float): Recombination break point
-        chrom_x (list): Chromatid
-        geno_x (list): Genotype
-
-    Returns:
-        int: index of inserted segment
-    '''
-    # bisect
-    new_index = bisect_left(chrom_x, break_point)
-    end_point = int(break_point - 0.5)
-    # check if break point already exists
-    if new_index > 0 and end_point == chrom_x[new_index-1]:
-        return new_index - 1
-    # insert
-    chrom_x.insert(new_index, end_point)
-    new_geno = geno_x[new_index]
-    geno_x.insert(new_index, new_geno)
-    return new_index
-# add_break_point
-
-
-def exchange_block(ls_p, ls_m, indexp, indexm):
-    '''
-    Exchange partial list after break point
-
-    Args:
-        ls_p (list): Paternal list
-        ls_m (list): Maternal list
-        indexp (int): Paternal index with break point
-        indexm (int): Maternal index with break point
-    '''
-    ls_p[indexp+1:], ls_m[indexm+1:] = ls_m[indexm+1:], ls_p[indexp+1:]
-# exchange_block
-
-
-def crossing_over(break_point, chrom_p, chrom_m, geno_p, geno_m):
-    '''
-    Cross-over two chromatids
-
-    * step 1: Get the indices, where crossing-over occurs
-    * setp 2: Insert a new segment
-    * step 3: Exchange the segments behind the break point
-
-    Args:
-        break_point (int): Recombination break point
-        chrom_p (list): Paternal chromatid
-        chrom_m (list): Maternal chromatid
-        geno_p (list): Paternal genotype
-        geno_m (list): Maternal genotype
-    '''
-    new_indexp = add_break_point(break_point, chrom_p, geno_p)
-    new_indexm = add_break_point(break_point, chrom_m, geno_m)
-    # crossing-over event
-    # chromosome
-    exchange_block(chrom_p, chrom_m, new_indexp, new_indexm)
-    # genotype
-    exchange_block(geno_p, geno_m, new_indexp, new_indexm)
-# crossing_over
-
-
-def gameto_genesis(chrom_inf, ex_n_rec):
+def new_gamete(chrom_info, ex_n_rec):
     '''
     Simulate gametogenesis
 
@@ -81,30 +19,23 @@ def gameto_genesis(chrom_inf, ex_n_rec):
     to be constant across chromosomes.
 
     Args:
-        chrom_inf (ChromInfo class): Information of a chromosome
+        chrom_info (ChromInfo class): Information of a chromosome
         ex_n_rec (float): Expected number of crossing-over
 
     Returns:
-        Chromosome information
-
-        - list: one of four chromatids,
-        - list: genotype
+        numpy.ndarray: SNPs of a new gamete
 
     Note:
         If the expected number of crossing-over event is less than one,
         the script stops.
     '''
     # bivalent chromosomes
-    chrom_p1 = chrom_inf.chrom_pat.copy()
-    chrom_p2 = chrom_inf.chrom_pat.copy()
-    chrom_m1 = chrom_inf.chrom_mat.copy()
-    chrom_m2 = chrom_inf.chrom_mat.copy()
-    geno_p1 = chrom_inf.genotype_pat.copy()
-    geno_p2 = chrom_inf.genotype_pat.copy()
-    geno_m1 = chrom_inf.genotype_mat.copy()
-    geno_m2 = chrom_inf.genotype_mat.copy()
+    chrom_p1 = chrom_info.snp_pat.copy()
+    chrom_p2 = chrom_info.snp_pat.copy()
+    chrom_m1 = chrom_info.snp_mat.copy()
+    chrom_m2 = chrom_info.snp_mat.copy()
     # crossing-over
-    l_chrom = chrom_inf.chrom[1]
+    l_chrom = chrom_info.chrom[1]
     # '1+' means obligate chiasma
     if ex_n_rec > 1.0:
         n_rec = 1 + np.random.poisson(ex_n_rec-1)
@@ -116,38 +47,74 @@ def gameto_genesis(chrom_inf, ex_n_rec):
         n_rec = 1
         sys.exit('Expected num crossing over events is less than 1')
     # if 100.5, crossing-over occurs between 100th and 101th sites
-    break_point = np.random.randint(low=1, high=l_chrom, size=n_rec) + 0.5
+    break_point = np.random.randint(low=0, high=l_chrom - 1, size=n_rec) + 0.5
     bivalent = np.random.randint(4, size=n_rec+1)
     # crossing-over
     for i in range(n_rec):
         # which sister-chromatids are recombined
         if bivalent[i] == 0:
-            crossing_over(break_point[i], chrom_p1, chrom_m1, geno_p1, geno_m1)
+            cpp.crossing_over(break_point[i], chrom_p1, chrom_m1,
+                              chrom_info.position)
         elif bivalent[i] == 1:
-            crossing_over(break_point[i], chrom_p1, chrom_m2, geno_p1, geno_m2)
+            cpp.crossing_over(break_point[i], chrom_p1, chrom_m2,
+                              chrom_info.position)
         elif bivalent[i] == 2:
-            crossing_over(break_point[i], chrom_p2, chrom_m1, geno_p2, geno_m1)
+            cpp.crossing_over(break_point[i], chrom_p2, chrom_m1,
+                              chrom_info.position)
         elif bivalent[i] == 3:
-            crossing_over(break_point[i], chrom_p2, chrom_m2, geno_p2, geno_m2)
+            cpp.crossing_over(break_point[i], chrom_p2, chrom_m2,
+                              chrom_info.position)
     # which chromaid is inherited
     if bivalent[n_rec] == 0:
-        return chrom_p1, geno_p1
+        return chrom_p1
     if bivalent[n_rec] == 1:
-        return chrom_p2, geno_p2
+        return chrom_p2
     if bivalent[n_rec] == 2:
-        return chrom_m1, geno_m1
+        return chrom_m1
     if bivalent[n_rec] == 3:
-        return chrom_m2, geno_m2
+        return chrom_m2
     return -777
-# gameto_genesis
+# new_gameto
+
+
+def produce_progeny(par_f, par_m, pro_x):
+    '''
+    Produce progeny
+
+    Args:
+        par_f (IndividualInfo): Female parent
+        par_m (IndividualInfo): Mmale parent
+        pro_x (IndividualInfo): Progeny
+    '''
+    # for each chromosome
+    for i in range(par_f.chrom[0]):
+        # copy position
+        if pro_x.chrom_ls[i].position is None:
+            pro_x.chrom_ls[i].position = par_f.chrom_ls[i].position.copy()
+        # gamete from female
+        new_gamete1 = new_gamete(par_f.chrom_ls[i], par_f.n_recf)
+        if pro_x.chrom_ls[i].snp_mat is None:
+            pro_x.chrom_ls[i].snp_mat = new_gamete1.copy()
+        else:
+            cpp.copy_1D(new_gamete1, pro_x.chrom_ls[i].snp_mat)
+        # gamete from male
+        new_gamete2 = new_gamete(par_m.chrom_ls[i], par_m.n_recm)
+        if pro_x.chrom_ls[i].snp_pat is None:
+            pro_x.chrom_ls[i].snp_pat = new_gamete2.copy()
+        else:
+            cpp.copy_1D(new_gamete2, pro_x.chrom_ls[i].snp_pat)
+    # Set ID
+    pro_x.mat_id = par_f.sample_id
+    pro_x.pat_id = par_m.sample_id
+    pro_x.sample_id = -1
+# produce_progeny
 
 
 def main():
     '''
     main
     '''
-    print('gametogenesis.py')
-    print('Module for gametogenesis')
+    print('A module for gametogenesis')
 # main
 
 
