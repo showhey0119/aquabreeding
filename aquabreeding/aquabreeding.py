@@ -69,19 +69,17 @@ class AquaBreeding:
         mean_phenotype (float): Mean phenotype
         var_phenotype (float): Variance of phenotype
         heritability (float): Heeritability
-        gblup (int): No. SNPs for GBLUP with no effect on phenotype,
-                     default None
         n_nat (int): No. individuals in a extra natural population,
                      default None
 
     Attributes:
+        founder_size (tuple): Nos. first female and male parents
         chrom (tuple): Chrom num, chrom len (bp), female cM/Mb, male cM/Mb
-        par_inf (PopulationInfo class): Founder/parental population
-        pro_inf (PopulationInfo class): Progeny population
+        par_inf (PopulationInfo): Founder/parental population
+        pro_inf (PopulationInfo): Progeny population
         n_snp (int): No. causal SNPs
-        phe_inf (PhenotypeInfo class): Phenotype information
-        cross_inf (ndarray): Female index, male index, no. female progeny,
-                             no. male progeny
+        phe_inf (PhenotypeInfo): Phenotype information
+        cross_inf (numpy.ndarray): Index pairs of female and male parents
         gblup (int): No. neutral SNPs
     '''
     def __init__(self, founder_size, chrom, mean_phenotype, var_phenotype,
@@ -152,10 +150,6 @@ class AquaBreeding:
                               index of female parents and index of male
                               parents.
             select_size (tuple): Set nos. selected females and males
-
-        Note:
-            * cross_design works when nos. females and males are the same.
-            * Evaluate cuastom_design first.  If None, evaluate cross_design.
         '''
         if select_size is None:
             select_size = (self.par_inf.n_f, self.par_inf.n_m)
@@ -188,10 +182,11 @@ class AquaBreeding:
             target (str): If 'BLUP', numerator relationship matrix is used
                           to estimate breeding values.  If 'GBLUP', genomic
                           relationship matrix is used.  If 'no', breeding
-                          values are not estimated. Default 'ABLUP'
+                          values are not estimated. Default 'BLUP'
         '''
         # genotype matrix
         self.pro_inf.genotype_matrix(self.n_snp, self.gblup)
+        # Calculate phenotype and breeding value
         self.phe_inf.calculate_bv(target, self.par_inf, self.pro_inf,
                                   self.founder_size, self.n_snp, self.gblup)
     # breeding_value
@@ -213,7 +208,7 @@ class AquaBreeding:
             top_prop (float): Select progenies with top X% breeding values
                               in within-family selection. Set 0.0 < top_prop
                               <= 1.0.
-            n_family (int): Number of families to be selected
+            n_family (int): No. families to be selected
             select_size (tulple): Number of selected founders, default: None
             max_f (float): F values among selected individuals are less than
                            max_f
@@ -243,7 +238,7 @@ class AquaBreeding:
         Output phenotype
 
         Returns:
-            numpy.ndarray: Phenotypics values
+            numpy.ndarray: Phenotype
         '''
         return self.phe_inf.pheno_v
     # get_phenotype
@@ -270,12 +265,12 @@ class AquaBreeding:
 
     def variance_component(self):
         '''
-        Outut additive and residual variance
+        Outut estimated additive and residual variance
 
         Returns:
             tuple: Additive and residual variance
         '''
-        return (self.phe_inf.hat_vg, self.phe_inf.hat_ve)
+        return self.phe_inf.hat_vg, self.phe_inf.hat_ve
     # variance_component
 
     def use_natural(self, gender, num):
@@ -287,7 +282,7 @@ class AquaBreeding:
             num (int): The number of natural individuals
         '''
         mt.use_natural_parent(self.par_inf, gender, num)
-    # use natural
+    # use_natural
 # AquaBreeding
 
 

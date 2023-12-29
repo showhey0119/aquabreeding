@@ -8,22 +8,20 @@ This is a beta version.  Please do not use it for any publications.
 
 
 ## Last update
-- 05/19/2023
+- 12/29/2023
 
 
 ## Note
-- Aquabreeding does not yet support python3.11.  
-- numba 0.56.4 should be used.  
+- Aquabreeding supports python3.11.  
 
 
 ## Requirements
 - macOS, Linux
-- python3 (3.9 or 3.10)  
+- python3 (3.11)  
   (e.g., brew install python3)
 - python libraries (automatically installed)
     - numpy
     - scipy
-    - numba  
     - [msprime](https://tskit.dev/msprime/docs/stable/intro.html)  
     - pandas (for jupyter notebook)  
     - matplotlib (for jupyter notebook)  
@@ -51,6 +49,9 @@ see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/b
 
 
 ## History
+- Version 0.9.0 is released (12/29/2023)  
+    - Aquabreeding supports python3.11  
+
 - Version 0.8.1 is released (05/19/2023)  
     - Bug fix  
 

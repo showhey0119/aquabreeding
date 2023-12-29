@@ -10,12 +10,12 @@ from aquabreeding import aquacpp as cpp
 
 def nrm_cpp(par_inf, pro_inf, founder_size):
     '''
-    Calculate numerator relationship matrix with C++
+    Calculate numerator relationship matrix
 
     Args:
-        par_inf (PopulationInfo class): Founder population
-        pro_inf (PopulationInfo class): Progeny population
-        founder_size (int): Founder population size
+        par_inf (PopulationInfo): Founder population
+        pro_inf (PopulationInfo): Progeny population
+        founder_size (int): Initial founder population size
     '''
     par_dict = par_inf.d_par
     par_key = list(par_dict.keys())
@@ -53,8 +53,8 @@ def bv_estimation(phe_inf, g_mat):
     The original method is described in
     Kang et al. (2008) Genetics 178, 1709-1723.
     Args:
-        phe_inf (PhenotypeInfo class): Phenotype information
-        g_mat (ndarray): Genomic/numerator relationship matrix
+        phe_inf (PhenotypeInfo): Phenotype information
+        g_mat (numpy.ndarray): Genomic/numerator relationship matrix
     Note:
         Fixed effect is not implement yet.
     '''
@@ -108,7 +108,7 @@ def bv_estimation(phe_inf, g_mat):
     # estimate breeding value
     phe_inf.hat_bv = kzt_hinv @ (y_vec - x_mat @ phe_inf.hat_beta)
     phe_inf.hat_beta = x_mat.mean(axis=0) @ phe_inf.hat_beta
-# gebv_calculation
+# bv_estimation
 
 
 def convert_gmatrix(pro_inf, gen_array):
@@ -116,11 +116,11 @@ def convert_gmatrix(pro_inf, gen_array):
     Convert genotype matrix into G matrix for GBLUP
 
     Args:
-        pro_inf (PopulationInfo class): Progeny population
-        gen_array (ndarray): Genotype matrix
+        pro_inf (PopulationInfo): Progeny population
+        gen_array (numpy.ndarray): Genotype matrix
 
     Returns:
-        ndarray: G matrix
+        numpy.ndarray: Genomic relationship matrix
     '''
     n_cols = gen_array.shape[1]
     # allele frequency

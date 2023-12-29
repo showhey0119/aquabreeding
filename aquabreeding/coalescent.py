@@ -80,7 +80,8 @@ def get_index_structured(n_pop, n_female, n_male):
         n_male (tuple): The numbers of males in each population
 
     Returns:
-        list, list: lists of female/male index
+        - list: Female index
+        - list: Male index
     '''
     tmp_i = 0
     f_id = []
@@ -169,10 +170,9 @@ def structured_population(n_snp, gblup, n_pop, fst_value, n_female, n_male):
 
 def run_msprime(n_snp, gblup, n_sample):
     '''
-    Run msprime under a given model
+    Run msprime under a standard Wright-Fisher model
 
     Args:
-        par_inf (PopulationInfo): Founder population
         n_snp (int): No. causal SNPs
         gblup (int): No. neutral SNPs
         n_sample (int): No. individuals

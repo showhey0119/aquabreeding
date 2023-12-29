@@ -35,7 +35,7 @@ def calculate_p_1p(gen_mat, n_hap):
     Calculate E[p(1 - p)] from a genotype matrix
 
     Args:
-        gen_mat (ndarray): Genotype matrix (no. samples x np. loci)
+        gen_mat (numpy.ndarray): Genotype matrix (no. samples x np. loci)
         n_hap (int): No. haplotypes
 
     Returns:
@@ -46,7 +46,7 @@ def calculate_p_1p(gen_mat, n_hap):
         Calculate p(1 - p)
 
         Args:
-            arr1d (ndarray): List of genotypes
+            arr1d (numpy.ndarray): List of genotypes
             n_hap (int): No. haplotypes
 
         Return:
@@ -116,8 +116,8 @@ class PhenotypeInfo:
         mean_pv (float): Mean phenotype
         var_p (float): Variance of phenotype
         h2_p (float): Heritability
-        true_vg (float): True additive genetic variance
-        true_ve (float): True residual variance
+        v_g (float): True additive genetic variance
+        v_e (float): True residual variance
         v_s (float): Variance of effect_size
         effect_size (numpy.ndarray): Effect size
         pheno_v (numpy.ndarray): Phenotypic values
@@ -126,6 +126,9 @@ class PhenotypeInfo:
         hat_beta (numpy.ndarray): Estimated fixed effects
         hat_vg (float): Estimated additvie genetic variance
         hat_ve (float): Estimated residual variance
+        index_neu (numpy.ndarray): Index of neutral SNPs
+        index_eff (numpy.ndarray): Index of causal SNPs
+        _first_gen (bool): Check if the fist generation or not
     '''
     def __init__(self, mean_phenotype, var_phenotype, heritability):
         '''
@@ -154,9 +157,10 @@ class PhenotypeInfo:
     def calculate_bv(self, target, par_inf, pro_inf, founder_size, n_snp,
                      gblup):
         '''
-        Calculate phenotype
+        Calculate phenotype and breeding value
 
         Args:
+            target (str): 'BLUP', 'GBLUP', or 'no'
             par_inf (PopulationInfo): Founder population
             pro_inf (PopulationInfo): Progeny population
             founder_size (tuple): Nos. female and male in the founder
@@ -194,13 +198,16 @@ class PhenotypeInfo:
         bl.nrm_cpp(par_inf, pro_inf, founder_size)
         # BLUP
         if target == 'BLUP':
+            # Breeding value estimation
             bl.bv_estimation(self, pro_inf.a_mat)
         # GBLUP
         elif target == 'GBLUP':
+            # Genomic relationship matrix
             bl.convert_gmatrix(pro_inf, pro_inf.gen_mat[:, self.index_neu])
+            # Breeding value estimation
             bl.bv_estimation(self, pro_inf.g_mat)
     # calclaate_phenotype
-# PhenotypeInfo class
+# PhenotypeInfo
 
 
 def main():

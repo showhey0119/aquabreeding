@@ -12,7 +12,7 @@ def merge_snp(snp_pro, pop_x, stt):
 
     Args:
         snp_pro (numpy.ndarray): SNP matrix
-        pop_x (list): List of individual class
+        pop_x (list): List of IndividualInfo of female/male
         stt (int): Start index of rows
     '''
     i_row = stt
@@ -29,17 +29,16 @@ def merge_snp(snp_pro, pop_x, stt):
 
 class ChromInfo:
     '''
-    Class for a chromosomes
+    Class for a chromosome
 
     Args:
         chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
 
     Attributes:
         chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
-        chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
-        position (ndarray): Positions of SNPs
-        snp_mat (ndaray): SNPs of the maternal chromosome
-        snp_pat (ndarray): SNPs of the paternal chromosome
+        position (numpy.ndarray): Positions of SNPs
+        snp_mat (numpy.ndarray): SNPs of the maternal chromosome
+        snp_pat (numpy.ndarray): SNPs of the paternal chromosome
     '''
     def __init__(self, chrom):
         '''
@@ -91,7 +90,7 @@ class IndividualInfo:
         self.n_recf = 2.0*self.chrom[2]*self.chrom[1]/(10.0**6)/100.0
         self.n_recm = 2.0*self.chrom[3]*self.chrom[1]/(10.0**6)/100.0
     # __init__
-# IndividualInfo class
+# IndividualInfo
 
 
 class PopulationInfo:
@@ -101,15 +100,22 @@ class PopulationInfo:
     Args:
         pop_size (tuple): Nos. females and  males in a population
         chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
+        n_nat (int): No. additional wild individuals
 
     Attributes:
         chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
-        n_f (int): No. of females in a population
-        n_m (int): No. of males in a population
+        n_f (int): No. females in a population
+        n_m (int): No. males in a population
         pop_f (list): List of female IndividualInfo class
         pop_m (list): List of male IndividualInfo class
         tmp_id (int): ID of all parents (only used for a founder)
         d_par (dict): Dict of parents of founders (only used for a founder)
+        n_nat (int): No. additional wild individual
+        pop_n (list): List of additional wild IndividualInfo class
+        count_nat (int): Counter for additional wilds
+        gen_mat (numpy.ndarray): Genotype matrix
+        a_mat (numpy.ndarray): Numerator relationship matrix
+        g_mat (numpy.ndarray): Genomic relationship matrix
     '''
     def __init__(self, pop_size, chrom, n_nat=None):
         '''

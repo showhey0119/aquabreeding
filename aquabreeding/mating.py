@@ -1,5 +1,5 @@
 '''
-Module for mating
+A module for mating
 '''
 
 import re
@@ -15,7 +15,7 @@ def use_natural_parent(par_inf, gender, num):
     Incorporate natural individuals into mating
 
     Args:
-        par_inf (PopulationInfo class): parental population info
+        par_inf (PopulationInfo): parental population info
         gender (str): 'female' or 'male'
         num (int): No. natural individuals
     '''
@@ -112,17 +112,20 @@ def set_mating_design(design, select_size):
     Generate cross design information
 
     Args:
-        par_inf (PopulationInfo class): Founder population
-        cross_design (str): '1x(int)' partial or 'full' factorial mating
+        design (unknown): Implemented mating design (str) or index pairs of
+                          female and male parents (numpy.ndarray)
+        select_size (tuple): Nos. selected female and male parents
 
     Returns:
         numpy.ndarray: Female index, male index
     '''
+    # implemented
     if isinstance(design, str):
         if re.compile(r'^1x\d+$').match(design):
             return set_mating_design_partial(select_size, design)
         if design == 'full':
             return set_mating_design_full(select_size)
+    # custom
     if isinstance(design, np.ndarray):
         c_design = np.shape(design)[1]
         if c_design != 2:
@@ -138,9 +141,9 @@ def mating_process(cross_inf, par_inf, pro_ls, n_pro):
 
     Args:
         cross_inf (numpy.ndarray): Index pairs of female and male parents
-        par_inf (PopulationInfo class): Founder population
+        par_inf (PopulationInfo): Founder population
         pro_ls (list): List of IndividualInfo class of female/male
-        n_pro (int): Length of pro_ls
+        n_pro (int): No. progenies
     '''
     n_cross = np.shape(cross_inf)[0]
     # No. progenies in each cross
@@ -163,15 +166,9 @@ def start_mating(cross_inf, par_inf, pro_inf):
     Produce progenies by crossing founder/parental individuals
 
     Args:
-        cross_inf (ndarray): Female index, male index,
-                             no. female progeny, no. male progeny
-        par_inf (PopulationInfo class): Founder population
-        pro_inf (PopulationInfo class): Progeny population
-        ra (bool): random allocation or not
-
-    Note:
-        The numbers of female/male progenies are stored in
-        2nd and 3rd colums in cross_inf, respectively.
+        cross_inf (numpy.ndarray): Index pairs of female and male parents
+        par_inf (PopulationInfo): Founder population
+        pro_inf (PopulationInfo): Progeny population
     '''
     # produce female progeny
     mating_process(cross_inf, par_inf, pro_inf.pop_f, pro_inf.n_f)
@@ -184,8 +181,7 @@ def main():
     '''
     main
     '''
-    print('mating.py')
-    print('Module for mating')
+    print('A module for mating')
 # main
 
 

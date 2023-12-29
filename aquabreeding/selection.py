@@ -1,5 +1,5 @@
 '''
-Module for selecting individuals with large breeding values
+A module for selection
 '''
 
 import sys
@@ -15,9 +15,9 @@ def select_value(target, phe_inf):
     Set values, by which progenies are selected
 
     Args:
-        phe_inf (PhenotypeInfo): Phenotype information
         target (str): 'bv' (breeding value), 'phenotype' (phenotype), or
                       'random' (random) selection
+        phe_inf (PhenotypeInfo): Phenotype information
 
     Returns:
         numpy.ndarray: breeding value, phenotype or random number
@@ -38,7 +38,7 @@ def within_family_selection(summary_pro, select_size, fam_d, top_prop):
     Get index of progenies by within-family selection
 
     Args:
-        summary_pro (list): Index, family select value, female or male
+        summary_pro (list): Index, family, select value, female or male
         select_size (tuple): Nos. selected parents
         fam_d (dict): family dict
         top_prop (float): Select progenies from top X% values
@@ -59,8 +59,10 @@ def within_family_selection(summary_pro, select_size, fam_d, top_prop):
     while n_f != select_size[0] or n_m != select_size[1]:
         for i in range(n_p2):
             tmp_ls = summary_pro[i]
+            # already selected or masked
             if tmp_ls[0] == -7:
                 continue
+            # Enough no. individuals are selected in the family
             if fam_d[tmp_ls[1]] != n_tolerant:
                 continue
             # female
@@ -202,12 +204,13 @@ def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_f, i_rows):
         summary_pro (list): Index, family, select value, female or male
         select_size (tuple): Nos. parents to be selected
         top_prop (float): Select progenies from top X% values
-        g_mat (numpy.ndarray): A/G matrix
+        g_mat (numpy.ndarray): Numerator/genomic relationship matrix
         max_f (float): Max F value
         i_rows (int): To get male F value from A/G matrix
 
     Returns:
         Index of selected individuals
+
         - numpy.ndarray: Index of females
         - numpy.ndarray: Index of males
     '''
@@ -234,7 +237,7 @@ def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_f, i_rows):
             n_m += 1
             i_1 += i_rows
         tmp_ls[0] = -7
-        # check G matrix
+        # Mask if F value is larger than threshold
         for j in range(i+1, n_bv):
             tmp_ls2 = summary_pro[j]
             # G matrix index
@@ -255,7 +258,7 @@ def get_furthest_one(g_mat, x_index, y_ls, i_rows, f_m):
     Get the most distantly related one
 
     Args:
-        g_mat (numpy.ndarray): Genomic relationship matrix
+        g_mat (numpy.ndarray): Numerator/Genomic relationship matrix
         x_index (int): female/male index
         y_ls (list): remained male/female index list
         i_rows (int): To get index of male in G matrix
@@ -287,8 +290,8 @@ def arrange_parents(g_mat, cross_info, select_size, f_index, m_index,
     Arrange selected parents based on mating design
 
     Args:
-        g_mat (numpy.ndarray): A/G matrix
-        cross_info (numpy.ndaray): Index pairs of female and male parents
+        g_mat (numpy.ndarray): Numerator/genomic relationship  matrix
+        cross_inf (numpy.ndaray): Index pairs of female and male parents
         select_size (tuple): No. parents to be selected
         f_index (numpy.ndarray): Index of selected females
         m_index (numpy.ndarray): Index of selected males
@@ -380,8 +383,8 @@ def nextgen_parents(par_inf, pro_inf, f2_index, m2_index):
     Args:
         par_inf (PopulationInfo): Founder population
         pro_inf (PopulationInfo): Progeny population
-        f2_index (numpy.ndarray): Arranged index of selected females
-        m2_index (numpy.ndarray): Arranged index of selected males
+        f2_index (list): Arranged index of selected females
+        m2_index (list): Arranged index of selected males
     '''
     # female
     copy_individual(par_inf.pop_f, pro_inf.pop_f, f2_index)
@@ -464,7 +467,7 @@ def main():
     '''
     main
     '''
-    print('Module for selection')
+    print('A module for selection')
 # main
 
 

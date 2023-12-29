@@ -19,7 +19,7 @@ def new_gamete(chrom_info, ex_n_rec):
     to be constant across chromosomes.
 
     Args:
-        chrom_info (ChromInfo class): Information of a chromosome
+        chrom_info (ChromInfo): Information of a chromosome
         ex_n_rec (float): Expected number of crossing-over
 
     Returns:
@@ -114,7 +114,7 @@ def main():
     '''
     main
     '''
-    print('A module for gametogenesis')
+    print('A module for simulating gametogenesis')
 # main
 
 
