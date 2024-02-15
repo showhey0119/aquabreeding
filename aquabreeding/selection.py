@@ -196,7 +196,7 @@ def family_selection(summary_pro, select_size, fam_d, top_prop, n_family):
 # family_selection
 
 
-def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_f, i_rows):
+def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_r, i_rows):
     '''
     Get Index or selected progenies based on G matrix
 
@@ -205,7 +205,7 @@ def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_f, i_rows):
         select_size (tuple): Nos. parents to be selected
         top_prop (float): Select progenies from top X% values
         g_mat (numpy.ndarray): Numerator/genomic relationship matrix
-        max_f (float): Max F value
+        max_r (float): Max F value
         i_rows (int): To get male F value from A/G matrix
 
     Returns:
@@ -245,10 +245,10 @@ def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_f, i_rows):
             if tmp_ls2[3] == 1:
                 i_2 += i_rows
             # If two individuals are closely related
-            if g_mat[i_1][i_2] > max_f:
+            if g_mat[i_1][i_2] > max_r:
                 tmp_ls2[0] = -7
     if n_f != select_size[0] or n_m != select_size[1]:
-        sys.exit(f'Not enough {select_size}, {n_f} {n_m}, {max_f:.1f}')
+        sys.exit(f'Not enough {select_size}, {n_f} {n_m}, {max_r:.1f}')
     return f_index, m_index
 # fvalue_selection
 
@@ -396,7 +396,7 @@ def nextgen_parents(par_inf, pro_inf, f2_index, m2_index):
 
 
 def start_selection(par_inf, pro_inf, phe_inf, target, method, cross_inf,
-                    top_prop, n_family, select_size, max_f):
+                    top_prop, n_family, select_size, max_r):
     '''
     Args:
         par_inf (PopulationInfo): Founder population
@@ -415,7 +415,7 @@ def start_selection(par_inf, pro_inf, phe_inf, target, method, cross_inf,
                           <= 1.0.
         n_family (int): Number of families to be selected
         select_size (tulple): Number of selected founders
-        max_f (float): F among selected individuals is less than this value
+        max_r (float): R' among selected individuals is less than this value
     '''
     # Selection target
     select_val = select_value(target, phe_inf)
@@ -441,23 +441,23 @@ def start_selection(par_inf, pro_inf, phe_inf, target, method, cross_inf,
         f_index, m_index = family_selection(summary_pro, select_size, fam_d,
                                             top_prop, n_family)
     # A/G matrix based selection
-    elif method == 'FvalueA':
+    elif method == 'RvalueA':
         f_index, m_index = fvalue_selection(summary_pro, select_size, top_prop,
-                                            pro_inf.a_mat, max_f, pro_inf.n_f)
-    elif method == 'FvalueG':
+                                            pro_inf.a_mat, max_r, pro_inf.n_f)
+    elif method == 'RvalueG':
         f_index, m_index = fvalue_selection(summary_pro, select_size, top_prop,
-                                            pro_inf.g_mat, max_f, pro_inf.n_f)
+                                            pro_inf.g_mat, max_r, pro_inf.n_f)
+    else:
+        sys.exit(f'{method=} is invalid')
     # arrange parents based on cross_info
     # If G matrix is available
     if pro_inf.g_mat is not None:
-        f2_index, m2_index = arrange_parents(pro_inf.g_mat, cross_inf,
-                                             select_size, f_index, m_index,
-                                             pro_inf.n_f)
+        k_mat = pro_inf.g_mat
     # only A matrix is available
     else:
-        f2_index, m2_index = arrange_parents(pro_inf.a_mat, cross_inf,
-                                             select_size, f_index, m_index,
-                                             pro_inf.n_f)
+        k_mat = pro_inf.a_mat
+    f2_index, m2_index = arrange_parents(k_mat, cross_inf, select_size,
+                                         f_index, m_index, pro_inf.n_f)
     # Copy selected progenies to founder
     nextgen_parents(par_inf, pro_inf, f2_index, m2_index)
 # start_selection

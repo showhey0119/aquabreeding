@@ -171,12 +171,12 @@ class AquaBreeding:
         mt.start_mating(self.cross_inf, self.par_inf, self.pro_inf)
     # mating
 
-    def breeding_value(self, target='BLUP'):
+    def breeding_value(self, method='BLUP'):
         '''
         Calculate phenotype and breeding value
 
         Args:
-            target (str): If 'BLUP', numerator relationship matrix is used
+            method (str): If 'BLUP', numerator relationship matrix is used
                           to estimate breeding values.  If 'GBLUP', genomic
                           relationship matrix is used.  If 'no', breeding
                           values are not estimated. Default 'BLUP'
@@ -184,12 +184,12 @@ class AquaBreeding:
         # genotype matrix
         self.pro_inf.genotype_matrix(self.n_snp, self.gblup)
         # Calculate phenotype and breeding value
-        self.phe_inf.calculate_bv(target, self.par_inf, self.pro_inf,
+        self.phe_inf.calculate_bv(method, self.par_inf, self.pro_inf,
                                   self.n_snp, self.gblup)
     # breeding_value
 
     def selection(self, target='bv', method='mass', top_prop=1.0,
-                  n_family=-1, select_size=None, max_f=None):
+                  n_family=-1, select_size=None, max_r=None):
         '''
         Select parents of next generation
 
@@ -200,15 +200,15 @@ class AquaBreeding:
             method (str): How to select from progenies such as mass
                           selection ('mass'), within-family selection
                           ('within-family'),  family selection ('family'),
-                          or selection based on A matrix ('FvalueA') or
-                          G matrix ('FvalueG')
+                          or selection based on A matrix ('RvalueA') or
+                          G matrix ('RvalueG')
             top_prop (float): Select progenies with top X% breeding values
                               in within-family selection. Set 0.0 < top_prop
                               <= 1.0.
             n_family (int): No. families to be selected
             select_size (tulple): Number of selected founders, default: None
-            max_f (float): F values among selected individuals are less than
-                           max_f
+            max_r (float): R' values among selected individuals are less than
+                           max_r
         '''
         if select_size is not None:
             check_tuple(select_size, 'select_size', 2)
@@ -217,7 +217,7 @@ class AquaBreeding:
             select_size = (self.par_inf.n_f, self.par_inf.n_m)
         se.start_selection(self.par_inf, self.pro_inf, self.phe_inf,
                            target, method, self.cross_inf, top_prop,
-                           n_family, select_size, max_f)
+                           n_family, select_size, max_r)
     # selection
 
     def get_ibd(self):
@@ -277,6 +277,7 @@ class AquaBreeding:
         Args:
             num (tuple): No. famale/male parents relpaced by wild individuals
         '''
+        check_tuple(num, 'num', 2)
         self.par_inf.replace_wild(num)
     # use_natural
 # AquaBreeding

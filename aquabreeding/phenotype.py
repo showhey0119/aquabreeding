@@ -154,12 +154,12 @@ class PhenotypeInfo:
         self._first_gen = True
     # __init__
 
-    def calculate_bv(self, target, par_inf, pro_inf, n_snp, gblup):
+    def calculate_bv(self, method, par_inf, pro_inf, n_snp, gblup):
         '''
         Calculate phenotype and breeding value
 
         Args:
-            target (str): 'BLUP', 'GBLUP', or 'no'
+            method (str): 'BLUP', 'GBLUP', or 'no'
             par_inf (PopulationInfo): Founder population
             pro_inf (PopulationInfo): Progeny population
             n_snp (int): No. causal SNPs
@@ -195,11 +195,11 @@ class PhenotypeInfo:
         # Numerator relationship matrix
         bl.nrm_cpp(par_inf, pro_inf)
         # BLUP
-        if target == 'BLUP':
+        if method == 'BLUP':
             # Breeding value estimation
             bl.bv_estimation(self, pro_inf.a_mat)
         # GBLUP
-        elif target == 'GBLUP':
+        elif method == 'GBLUP':
             # Genomic relationship matrix
             bl.convert_gmatrix(pro_inf, pro_inf.gen_mat[:, self.index_neu])
             # Breeding value estimation
