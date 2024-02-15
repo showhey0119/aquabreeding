@@ -69,11 +69,10 @@ class AquaBreeding:
         mean_phenotype (float): Mean phenotype
         var_phenotype (float): Variance of phenotype
         heritability (float): Heeritability
-        n_nat (int): No. individuals in a extra natural population,
+        n_wild (int): No. individuals in a extra natural population,
                      default None
 
     Attributes:
-        founder_size (tuple): Nos. first female and male parents
         chrom (tuple): Chrom num, chrom len (bp), female cM/Mb, male cM/Mb
         par_inf (PopulationInfo): Founder/parental population
         pro_inf (PopulationInfo): Progeny population
@@ -83,19 +82,17 @@ class AquaBreeding:
         gblup (int): No. neutral SNPs
     '''
     def __init__(self, founder_size, chrom, mean_phenotype, var_phenotype,
-                 heritability, n_nat=None):
+                 heritability, n_wild=None):
         '''
         constructor
         '''
         # check argument
         check_tuple(founder_size, 'founder_size', 2)
         check_tuple(chrom, 'chrom', 4)
-        # initial founder size
-        self.founder_size = founder_size
         # chromosome info
         self.chrom = chrom
         # parental population
-        self.par_inf = po.PopulationInfo(founder_size, self.chrom, n_nat)
+        self.par_inf = po.PopulationInfo(founder_size, self.chrom, n_wild)
         self.par_inf.init_founder()
         # progeny population
         self.pro_inf = None
@@ -188,7 +185,7 @@ class AquaBreeding:
         self.pro_inf.genotype_matrix(self.n_snp, self.gblup)
         # Calculate phenotype and breeding value
         self.phe_inf.calculate_bv(target, self.par_inf, self.pro_inf,
-                                  self.founder_size, self.n_snp, self.gblup)
+                                  self.n_snp, self.gblup)
     # breeding_value
 
     def selection(self, target='bv', method='mass', top_prop=1.0,
@@ -273,15 +270,14 @@ class AquaBreeding:
         return self.phe_inf.hat_vg, self.phe_inf.hat_ve
     # variance_component
 
-    def use_natural(self, gender, num):
+    def wild_parent(self, num):
         '''
-        Incorporate natural individuals before mating
+        Replance parents with wild individuals before mating
 
         Args:
-            gender (str): 'female' or 'male'
-            num (int): The number of natural individuals
+            num (tuple): No. famale/male parents relpaced by wild individuals
         '''
-        mt.use_natural_parent(self.par_inf, gender, num)
+        self.par_inf.replace_wild(num)
     # use_natural
 # AquaBreeding
 

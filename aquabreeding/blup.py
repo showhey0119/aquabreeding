@@ -8,14 +8,13 @@ import numpy as np
 from aquabreeding import aquacpp as cpp
 
 
-def nrm_cpp(par_inf, pro_inf, founder_size):
+def nrm_cpp(par_inf, pro_inf):
     '''
     Calculate numerator relationship matrix
 
     Args:
         par_inf (PopulationInfo): Founder population
         pro_inf (PopulationInfo): Progeny population
-        founder_size (int): Initial founder population size
     '''
     par_dict = par_inf.d_par
     par_key = list(par_dict.keys())
@@ -34,7 +33,7 @@ def nrm_cpp(par_inf, pro_inf, founder_size):
     for individual in pro_inf.pop_m:
         dict_s.append(individual.pat_id)
         dict_d.append(individual.mat_id)
-    n_founder = founder_size[0] + founder_size[1]
+    n_founder = par_inf.n_founder
     n_progeny = pro_inf.n_f + pro_inf.n_m
     n_mat = np.identity(n_par + n_progeny, dtype=np.float64)
     cpp.nrm(n_mat, n_founder, n_par + n_progeny, dict_s, dict_d)

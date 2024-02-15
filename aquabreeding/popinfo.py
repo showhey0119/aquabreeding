@@ -2,6 +2,8 @@
 A module for population, individual, and chromosome class
 '''
 
+from copy import deepcopy
+from random import sample
 import numpy as np
 from aquabreeding import aquacpp as cpp
 
@@ -100,7 +102,7 @@ class PopulationInfo:
     Args:
         pop_size (tuple): Nos. females and  males in a population
         chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
-        n_nat (int): No. additional wild individuals
+        n_wild (int): No. extra wild individuals
 
     Attributes:
         chrom (tuple): Chrom num, chrom len, female cM/Mb, male cM/Mb
@@ -116,8 +118,12 @@ class PopulationInfo:
         gen_mat (numpy.ndarray): Genotype matrix
         a_mat (numpy.ndarray): Numerator relationship matrix
         g_mat (numpy.ndarray): Genomic relationship matrix
+        n_wild (int): No. extra wild individuals
+        pop_w (list): List of extra wild IndividualInfo class
+        cound_wild (int): Counter for extra wild individuals
+        n_founder (int): No. ancestral individuals including extra wilds
     '''
-    def __init__(self, pop_size, chrom, n_nat=None):
+    def __init__(self, pop_size, chrom, n_wild=None):
         '''
         Constructur
         '''
@@ -131,15 +137,18 @@ class PopulationInfo:
         # Pedigree info
         self.tmp_id = 0
         self.d_par = {}
-        # For additional wild individuals
-        self.n_nat = n_nat
-        self.pop_n = []
-        self.count_nat = 0
         # Genotype matrix
         self.gen_mat = None
         # Numerator/genomic relationship matrix
         self.a_mat = None
         self.g_mat = None
+        # Extra wild individuals
+        self.n_wild = n_wild
+        self.pop_w = []
+        self.counter_wild = 0
+        self.n_founder = self.n_f + self.n_m
+        if self.n_wild is not None:
+            self.n_founder += self.n_wild
     # __init__
 
     def init_founder(self):
@@ -161,9 +170,9 @@ class PopulationInfo:
             self.d_par[self.tmp_id]['pat'] = -1
             self.tmp_id += 1
         # extral natural individuals
-        if self.n_nat is not None:
-            for _ in range(self.n_nat):
-                self.pop_n.append(IndividualInfo(self.chrom, self.tmp_id))
+        if self.n_wild is not None:
+            for _ in range(self.n_wild):
+                self.pop_w.append(IndividualInfo(self.chrom, self.tmp_id))
                 self.d_par[self.tmp_id] = {}
                 self.d_par[self.tmp_id]['mat'] = -1
                 self.d_par[self.tmp_id]['pat'] = -1
@@ -247,6 +256,26 @@ class PopulationInfo:
             self.d_par[self.tmp_id]['pat'] = individual.pat_id
             self.tmp_id += 1
     # new_founder_id
+
+    def replace_wild(self, num):
+        '''
+        Replance parents with wild individuals before mating
+
+        Args:
+            num (tuple): Nos. famale/male parents relpaced by wild individuals
+
+        Note:
+            Exchange deepcopy into other fast function
+        '''
+        f_sel = sample(range(self.n_f), num[0])
+        m_sel = sample(range(self.n_m), num[1])
+        for i in f_sel:
+            self.pop_f[i] = deepcopy(self.pop_w[self.counter_wild])
+            self.counter_wild += 1
+        for i in m_sel:
+            self.pop_m[i] = deepcopy(self.pop_w[self.counter_wild])
+            self.counter_wild += 1
+    # replace_wild
 # PopulationInfo class
 
 

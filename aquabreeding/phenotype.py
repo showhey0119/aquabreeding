@@ -154,8 +154,7 @@ class PhenotypeInfo:
         self._first_gen = True
     # __init__
 
-    def calculate_bv(self, target, par_inf, pro_inf, founder_size, n_snp,
-                     gblup):
+    def calculate_bv(self, target, par_inf, pro_inf, n_snp, gblup):
         '''
         Calculate phenotype and breeding value
 
@@ -163,7 +162,6 @@ class PhenotypeInfo:
             target (str): 'BLUP', 'GBLUP', or 'no'
             par_inf (PopulationInfo): Founder population
             pro_inf (PopulationInfo): Progeny population
-            founder_size (tuple): Nos. female and male in the founder
             n_snp (int): No. causal SNPs
             gblup (int): No. neutral SNPs
 
@@ -195,7 +193,7 @@ class PhenotypeInfo:
                                      size=n_progeny)
         self.pheno_v = self.mean_pv + self.true_bv + rand_norm
         # Numerator relationship matrix
-        bl.nrm_cpp(par_inf, pro_inf, founder_size)
+        bl.nrm_cpp(par_inf, pro_inf)
         # BLUP
         if target == 'BLUP':
             # Breeding value estimation

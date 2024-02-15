@@ -4,37 +4,8 @@ A module for mating
 
 import re
 import sys
-from random import sample
-from copy import deepcopy
 import numpy as np
 from aquabreeding import gametogenesis as gg
-
-
-def use_natural_parent(par_inf, gender, num):
-    '''
-    Incorporate natural individuals into mating
-
-    Args:
-        par_inf (PopulationInfo): parental population info
-        gender (str): 'female' or 'male'
-        num (int): No. natural individuals
-    '''
-    # random select
-    if gender == 'female':
-        ls_sel = sample(range(par_inf.n_popf), num)
-    elif gender == 'male':
-        ls_sel = sample(range(par_inf.n_popm), num)
-    else:
-        sys.exit('Argument gender should be \'female\' or \'male\'')
-    # replace parents by natural individuals
-    for i_sel in ls_sel:
-        j_sel = par_inf.count_nat
-        if gender == 'female':
-            par_inf.pop_f[i_sel] = deepcopy(par_inf.pop_n[j_sel])
-        elif gender == 'male':
-            par_inf.pop_m[i_sel] = deepcopy(par_inf.pop_n[j_sel])
-        par_inf.count_nat += 1
-# use_natural_parent
 
 
 def set_mating_design_partial(select_size, design):

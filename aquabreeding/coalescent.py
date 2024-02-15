@@ -66,6 +66,9 @@ def add_founder_snp(par_inf, snp_mat):
             i_c = copy_snp(individual.chrom_ls[i], tmp_pos, tmp_snp, i_c)
         for individual in par_inf.pop_m:
             i_c = copy_snp(individual.chrom_ls[i], tmp_pos, tmp_snp, i_c)
+        if par_inf.n_wild is not None:
+            for individual in par_inf.pop_w:
+                i_c = copy_snp(individual.chrom_ls[i], tmp_pos, tmp_snp, i_c)
 # add_founder_snp
 
 
@@ -228,9 +231,14 @@ def coalescent_simulation(model, par_inf, n_snp, gblup, n_pop, fst, n_female,
     '''
     # Wright-Fisher model
     if model == 'WF':
-        snp_mat = run_msprime(n_snp, gblup, par_inf.n_f + par_inf.n_m)
+        n_sample = par_inf.n_f + par_inf.n_m
+        if par_inf.n_wild is not None:
+            n_sample += par_inf.n_wild
+        snp_mat = run_msprime(n_snp, gblup, n_sample)
     # Structured populations
     elif model == 'SP':
+        if par_inf.n_wild is not None:
+            sys.exit('Not implemented yet')
         snp_mat = structured_population(n_snp, gblup, n_pop, fst, n_female,
                                         n_male)
     else:
