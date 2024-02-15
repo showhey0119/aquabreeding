@@ -209,15 +209,19 @@ class AquaBreeding:
             select_size (tulple): Number of selected founders, default: None
             max_r (float): R' values among selected individuals are less than
                            max_r
+
+        Returns:
+            int: if 0, excuted correctly. if 1, terminated irregurally
         '''
         if select_size is not None:
             check_tuple(select_size, 'select_size', 2)
             self.par_inf.change_size(select_size)
         else:
             select_size = (self.par_inf.n_f, self.par_inf.n_m)
-        se.start_selection(self.par_inf, self.pro_inf, self.phe_inf,
-                           target, method, self.cross_inf, top_prop,
-                           n_family, select_size, max_r)
+        check_r = se.start_selection(self.par_inf, self.pro_inf, self.phe_inf,
+                                     target, method, self.cross_inf, top_prop,
+                                     n_family, select_size, max_r)
+        return check_r
     # selection
 
     def get_ibd(self):

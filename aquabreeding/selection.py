@@ -248,8 +248,10 @@ def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_r, i_rows):
             if g_mat[i_1][i_2] > max_r:
                 tmp_ls2[0] = -7
     if n_f != select_size[0] or n_m != select_size[1]:
+        print(f'Not enough {select_size}, {n_f} {n_m}, {max_r:.1f}')
+        return f_index, m_index, 1
         sys.exit(f'Not enough {select_size}, {n_f} {n_m}, {max_r:.1f}')
-    return f_index, m_index
+    return f_index, m_index, 0
 # fvalue_selection
 
 
@@ -416,6 +418,9 @@ def start_selection(par_inf, pro_inf, phe_inf, target, method, cross_inf,
         n_family (int): Number of families to be selected
         select_size (tulple): Number of selected founders
         max_r (float): R' among selected individuals is less than this value
+
+    Returns:
+        int: If 0, excuted correctly, if 1, terminated irreguraly
     '''
     # Selection target
     select_val = select_value(target, phe_inf)
@@ -442,11 +447,17 @@ def start_selection(par_inf, pro_inf, phe_inf, target, method, cross_inf,
                                             top_prop, n_family)
     # A/G matrix based selection
     elif method == 'RvalueA':
-        f_index, m_index = fvalue_selection(summary_pro, select_size, top_prop,
-                                            pro_inf.a_mat, max_r, pro_inf.n_f)
+        f_index, m_index, c_r = fvalue_selection(summary_pro, select_size,
+                                                 top_prop, pro_inf.a_mat,
+                                                 max_r, pro_inf.n_f)
+        if c_r == 1:
+            return 1
     elif method == 'RvalueG':
-        f_index, m_index = fvalue_selection(summary_pro, select_size, top_prop,
-                                            pro_inf.g_mat, max_r, pro_inf.n_f)
+        f_index, m_index, c_r = fvalue_selection(summary_pro, select_size,
+                                                 top_prop, pro_inf.g_mat,
+                                                 max_r, pro_inf.n_f)
+        if c_r == 1:
+            return 1
     else:
         sys.exit(f'{method=} is invalid')
     # arrange parents based on cross_info
@@ -460,6 +471,7 @@ def start_selection(par_inf, pro_inf, phe_inf, target, method, cross_inf,
                                          f_index, m_index, pro_inf.n_f)
     # Copy selected progenies to founder
     nextgen_parents(par_inf, pro_inf, f2_index, m2_index)
+    return 0
 # start_selection
 
 
