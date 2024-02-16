@@ -250,7 +250,7 @@ def fvalue_selection(summary_pro, select_size, top_prop, g_mat, max_r, i_rows):
     if n_f != select_size[0] or n_m != select_size[1]:
         print(f'Not enough {select_size}, {n_f} {n_m}, {max_r:.1f}')
         return f_index, m_index, 1
-        sys.exit(f'Not enough {select_size}, {n_f} {n_m}, {max_r:.1f}')
+        sys.exit(f'Not enough {select_size}, {n_f} {n_m}, {max_r:.2f}')
     return f_index, m_index, 0
 # fvalue_selection
 
