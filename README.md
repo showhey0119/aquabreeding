@@ -42,7 +42,12 @@ This is a beta version.  Please do not use it for any publications.
 If the installation fails, try
 `pip3 install -e .`  
 
-
+Trouble shooting: the cpp library sometimes cannot be built.  Updating pybind11 manually may solve this problem.  
+`git submodule deinit -f pybind11`  
+`git rm -f pybind11`  
+`rm -rf .git/modules/pybind11`  
+`git submodule add -b master https://github.com/pybind/pybind11.git pybind11`  
+`pip3 install .`  
 
 ## Quick startup
 see [aquabreeding\_tutorial.ipynb](https://github.com/showhey0119/aquabreeding/blob/master/aquabreeding_tutorial.ipynb)
